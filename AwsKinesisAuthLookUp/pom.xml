@@ -6,7 +6,7 @@
 
 	<groupId>gbc</groupId>
 	<artifactId>aws-kinesis-auth-look-up</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.3</version>
 	<packaging>jar</packaging>
 
 	<properties>
@@ -39,6 +39,13 @@
 			<artifactId>flink-connector-kinesis_${scala.binary.version}</artifactId>
 			<version>${flink.version}</version>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-dynamodb -->
+		<dependency>
+		    <groupId>com.amazonaws</groupId>
+		    <artifactId>aws-java-sdk-dynamodb</artifactId>
+		    <version>1.11.896</version>
+		</dependency>
+				
 
 		<dependency>
 			<groupId>org.apache.flink</groupId>
@@ -118,7 +125,7 @@
 							<transformers>
 								<transformer
 									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>com.amazonaws.services.kinesisanalytics.BasicStreamingJob</mainClass>
+									<mainClass>com.amazonaws.services.kinesisanalytics.AuthLookUp</mainClass>
 								</transformer>
 							</transformers>
 						</configuration>

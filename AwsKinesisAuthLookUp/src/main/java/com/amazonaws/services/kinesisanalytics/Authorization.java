@@ -58,7 +58,7 @@ public class Authorization implements Serializable {
 	}
 	
 	public Authorization(String str) {
-		this(str, ",");
+		this(str, ";");
 	}
 	
 	public Authorization(String str, String cep) {
@@ -87,7 +87,7 @@ public class Authorization implements Serializable {
 	
 	@Override
 	public String toString() {
-		return "authorizationId : " + authorizationId
+		return "authorizationId: " + authorizationId
 				+ ", authorizationTypeId: " + authorizationTypeId
 				+ ", authorizationAmt: " + authorizationAmt
 				+ ", cardId: " + cardId

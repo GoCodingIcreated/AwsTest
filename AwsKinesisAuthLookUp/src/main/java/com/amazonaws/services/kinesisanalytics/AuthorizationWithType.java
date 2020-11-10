@@ -20,7 +20,7 @@ public class AuthorizationWithType extends Authorization {
 	}
 	
 	public AuthorizationWithType(String str) {
-		this(str, ",");
+		this(str, ";");
 	}
 	
 	public AuthorizationWithType(String str, String cep) {

@@ -20,6 +20,15 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBRangeKey;
+import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
+
 /**
  * A basic Kinesis Data Analytics for Java application with Kinesis data streams
  * as source and sink.
@@ -31,10 +40,15 @@ public class AuthLookUp {
 	private static final String outputStreamName = "AUTH_FILTERED";
 	private static final Logger log = LoggerFactory.getLogger(AuthLookUp.class);
 
+	private static final String aws_access_key_id = "";
+    private static final String aws_secret_access_key = "";
+	
 	private static DataStream<String> createSourceFromStaticConfig(StreamExecutionEnvironment env) {
 		Properties inputProperties = new Properties();
 		inputProperties.setProperty(ConsumerConfigConstants.AWS_REGION, region);
 		inputProperties.setProperty(ConsumerConfigConstants.STREAM_INITIAL_POSITION, "LATEST");
+		inputProperties.setProperty(ConsumerConfigConstants.AWS_SECRET_ACCESS_KEY, aws_secret_access_key);
+		inputProperties.setProperty(ConsumerConfigConstants.AWS_ACCESS_KEY_ID, aws_access_key_id);
 
 		return env.addSource(new FlinkKinesisConsumer<>(inputStreamName, new SimpleStringSchema(), inputProperties));
 	}
@@ -72,6 +86,6 @@ public class AuthLookUp {
 		 */
 		auth.addSink(createSinkFromStaticConfig());
 
-		env.execute("Authorization with LookUp v.1.0.0.");
+		env.execute("Authorization with LookUp v.1.0.3.");
 	}
 }
