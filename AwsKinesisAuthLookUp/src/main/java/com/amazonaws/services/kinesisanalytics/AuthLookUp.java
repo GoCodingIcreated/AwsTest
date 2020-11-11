@@ -48,11 +48,12 @@ public class AuthLookUp {
     private static final String outputStreamName = "AUTH_FILTERED";
     private static final Logger log = LoggerFactory.getLogger(AuthLookUp.class);
     
+    private static final AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
     private static final String authorizationTypeTableName = "";
     
 
-    private static final String aws_access_key_id = "AKIAJM6OXMQDD5MYLAEQ";
-    private static final String aws_secret_access_key = "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";
+    private static final String aws_access_key_id = "";
+    private static final String aws_secret_access_key = "";
 
     private static DataStream<String> createSourceFromStaticConfig(StreamExecutionEnvironment env) {
         Properties inputProperties = new Properties();
@@ -86,38 +87,13 @@ public class AuthLookUp {
          * createSourceFromApplicationProperties(env);
          */
         DataStream<String> input = createSourceFromStaticConfig(env);
-        DataStream<AuthorizationWithType> auth = input.map((value) -> {
-            Authorization authRec = new Authorization(value);
-            AuthorizationWithType tmp = new AuthorizationWithType(value);
-            log.info("Got value: " + value + ", transformed to: " + authRec);
-
-            HashMap<String, AttributeValue> key_to_get = new HashMap<String, AttributeValue>();
-
-            key_to_get.put("DATABASE_NAME", new AttributeValue(name));
-
-            GetItemRequest request = null;
-     
-            request = new GetItemRequest().withKey(key_to_get).withTableName(authorizationTypeTableName);
-            
-
-            final AmazonDynamoDB ddb = AmazonDynamoDBClientBuilder.defaultClient();
-
-            try {
-                Map<String, AttributeValue> returned_item = ddb.getItem(request).getItem();
-                if (returned_item != null) {
-                    Set<String> keys = returned_item.keySet();
-                    for (String key : keys) {
-                        System.out.format("%s: %s\n", key, returned_item.get(key).toString());
-                    }
-                } else {
-                    System.out.format("No item found with the key %s!\n", name);
-                }
-            } catch (AmazonServiceException e) {
-                System.err.println(e.getErrorMessage());
-                System.exit(1);
-            }
-
-            return tmp;
+        DataStream<AuthorizationWithType> auth = input.map((value) -> {        	
+            Authorization authRec = new Authorization(value);            
+            DynamoDBMapper mapper = new DynamoDBMapper(client);            
+            AuthorizationType authType = mapper.load(AuthorizationType.class, authRec.getAuthorizationTypeId());            
+            AuthorizationWithType authWithType = new AuthorizationWithType(authRec, authType.getAuthorizationTypeNm());
+            log.info("Map 1: value: " + value + ", authRec: " + authRec + ", authType: " + authType + ", authWithType: " + authWithType);                        
+            return authWithType;
         });
         /*
          * if you would like to use runtime configuration properties, uncomment the
@@ -125,6 +101,6 @@ public class AuthLookUp {
          */
         auth.addSink(createSinkFromStaticConfig());
 
-        env.execute("Authorization with LookUp v.1.0.3.");
+        env.execute("Authorization with LookUp v.1.0.7.");
     }
 }

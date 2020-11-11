@@ -17,6 +17,10 @@ public class AuthorizationType implements Serializable  {
 	private int authorizationTypeId;
 	private String authorizationTypeNm;
 	
+	public AuthorizationType() {
+		super();
+	}
+	
 	public AuthorizationType(int authorizationTypeId, String authorizationTypeNm) {
 		super();
 		this.authorizationTypeId = authorizationTypeId;
