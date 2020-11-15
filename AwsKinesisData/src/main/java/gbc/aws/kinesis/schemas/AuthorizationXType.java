@@ -1,11 +1,12 @@
-package com.amazonaws.services.kinesisanalytics;
+package gbc.aws.kinesis.schemas;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AuthorizationWithType extends Authorization {
-	private static final Logger log = LoggerFactory.getLogger(AuthorizationWithType.class);
-	private String authorizationTypeNm;
+public class AuthorizationXType extends Authorization {
+	protected static final long serialVersionUID = 1L;
+	protected static final Logger log = LoggerFactory.getLogger(AuthorizationXType.class);
+	protected String authorizationTypeNm;
 
 	public String getAuthorizationTypeNm() {
 		return authorizationTypeNm;
@@ -14,45 +15,44 @@ public class AuthorizationWithType extends Authorization {
 	public void setAuthorizationTypeNm(String authorizationTypeNm) {
 		this.authorizationTypeNm = authorizationTypeNm;
 	}
-	
-	public AuthorizationWithType() {
-		
+
+	public AuthorizationXType() {
+
 	}
-	
-	public AuthorizationWithType(String str) {
+
+	public AuthorizationXType(String str) {
 		this(str, ";");
 	}
-	
-	public AuthorizationWithType(String str, String cep) {
+
+	public AuthorizationXType(String str, String cep) {
 		super(str, cep);
 		String arr[] = str.split(cep);
 		try {
 			this.authorizationTypeNm = arr[5];
-		}
-		catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
+		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
 			log.warn("Not all fields was initialized: " + str);
 		}
 	}
-	
-	public AuthorizationWithType(int authorizationId, int authorizationTypeId, double authorizationAmt, int cardId,
+
+	public AuthorizationXType(Integer authorizationId, Integer authorizationTypeId, Double authorizationAmt, Integer cardId,
 			String authorizationDttm, String authorizationTypeNm) {
 		super(authorizationId, authorizationTypeId, authorizationAmt, cardId, authorizationDttm);
 		this.authorizationTypeNm = authorizationTypeNm;
 	}
-	
-	public AuthorizationWithType(Authorization auth, String authorizationTypeNm) {
+
+	public AuthorizationXType(Authorization auth, String authorizationTypeNm) {
 		super(auth);
 		this.authorizationTypeNm = authorizationTypeNm;
 	}
-	
-	public AuthorizationWithType(AuthorizationWithType auth) {
+
+	public AuthorizationXType(AuthorizationXType auth) {
 		super(auth);
 		this.authorizationTypeNm = auth.authorizationTypeNm;
 	}
-	
+
 	@Override
 	public String toString() {
 		return super.toString() + ", authorizationTypeNm: " + authorizationTypeNm;
 	}
-	
+
 }

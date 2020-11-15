@@ -1,4 +1,4 @@
-package com.amazonaws.services.kinesisanalytics;
+package gbc.aws.kinesis.schemas;
 
 import java.io.Serializable;
 
@@ -7,35 +7,36 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Authorization implements Serializable {
-	private static final Logger log = LoggerFactory.getLogger(Authorization.class);
-	private int authorizationId;
-	private int authorizationTypeId;
-	private double authorizationAmt;
-	private int cardId;
-	private String authorizationDttm;
+	protected static final Logger log = LoggerFactory.getLogger(Authorization.class);
+	protected static final long serialVersionUID = 1L;
+	protected Integer authorizationId;
+	protected Integer authorizationTypeId;
+	protected Double authorizationAmt;
+	protected Integer cardId;
+	protected String authorizationDttm;
 	
-	public int getAuthorizationId() {
+	public Integer getAuthorizationId() {
 		return authorizationId;
 	}
-	public void setAuthorizationId(int authorizationId) {
+	public void setAuthorizationId(Integer authorizationId) {
 		this.authorizationId = authorizationId;
 	}
-	public int getAuthorizationTypeId() {
+	public Integer getAuthorizationTypeId() {
 		return authorizationTypeId;
 	}
-	public void setAuthorizationTypeId(int authorizationTypeId) {
+	public void setAuthorizationTypeId(Integer authorizationTypeId) {
 		this.authorizationTypeId = authorizationTypeId;
 	}
-	public double getAuthorizationAmt() {
+	public Double getAuthorizationAmt() {
 		return authorizationAmt;
 	}
-	public void setAuthorizationAmt(double authorizationAmt) {
+	public void setAuthorizationAmt(Double authorizationAmt) {
 		this.authorizationAmt = authorizationAmt;
 	}
-	public int getCardId() {
+	public Integer getCardId() {
 		return cardId;
 	}
-	public void setCardId(int cardId) {
+	public void setCardId(Integer cardId) {
 		this.cardId = cardId;
 	}
 	public String getAuthorizationDttm() {
@@ -75,7 +76,7 @@ public class Authorization implements Serializable {
 		}
 	}
 	
-	public Authorization(int authorizationId, int authorizationTypeId, double authorizationAmt, int cardId,
+	public Authorization(Integer authorizationId, Integer authorizationTypeId, Double authorizationAmt, Integer cardId,
 			String authorizationDttm) {
 		super();
 		this.authorizationId = authorizationId;
