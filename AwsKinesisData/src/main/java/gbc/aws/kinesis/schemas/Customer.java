@@ -7,7 +7,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 
 @DynamoDBTable(tableName = "CUSTOMER")
-public class Cutomer implements Serializable {
+public class Customer implements Serializable {
 	private static final long serialVersionUID = 1L;
 	protected Integer customerId;
 	protected String lastName;
@@ -15,11 +15,11 @@ public class Cutomer implements Serializable {
 	protected String middleName;
 	protected String birthDt;
 
-	public Cutomer() {
+	public Customer() {
 		super();
 	}
 
-	public Cutomer(Cutomer clrType) {
+	public Customer(Customer clrType) {
 		super();
 		this.customerId = clrType.customerId;
 		this.lastName = clrType.lastName;
@@ -28,8 +28,7 @@ public class Cutomer implements Serializable {
 		this.birthDt = clrType.birthDt;
 	}
 
-
-	public Cutomer(Integer customerId, String lastName, String firstName, String middleName, String birthDt) {
+	public Customer(Integer customerId, String lastName, String firstName, String middleName, String birthDt) {
 		super();
 		this.customerId = customerId;
 		this.lastName = lastName;
@@ -85,8 +84,8 @@ public class Cutomer implements Serializable {
 
 	@Override
 	public String toString() {
-		return "customerId:  " + customerId + ", lastName:  " + lastName + ", firstName:  " + firstName
-				+ ", middleName:  " + middleName + ", birthDt:  " + birthDt;
+		return "customerId: " + customerId + ", lastName: " + lastName + ", firstName: " + firstName + ", middleName: "
+				+ middleName + ", birthDt: " + birthDt;
 	}
 
 }

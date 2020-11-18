@@ -1,6 +1,9 @@
 package gbc.aws.kinesis.schemas;
 
-public class Transaction {
+import java.io.Serializable;
+
+public class Transaction  implements Serializable {
+	private static final long serialVersionUID = 1L;
 	protected Integer transactionId;
 	protected Integer clearingId;
 	protected Integer clearingTypeId;
@@ -227,6 +230,16 @@ public class Transaction {
 
 	public void setTransactionAmt(Double transactionAmt) {
 		this.transactionAmt = transactionAmt;
+	}
+
+	@Override
+	public String toString() {
+		return "transactionId: " + transactionId + ", clearingId: " + clearingId + ", clearingTypeId: " + clearingTypeId
+				+ ", authorizationId: " + authorizationId + ", clearingAmt: " + clearingAmt + ", cardId: " + cardId
+				+ ", clearingDttm: " + clearingDttm + ", clearingTypeNm: " + clearingTypeNm + ", authorizationTypeId: "
+				+ authorizationTypeId + ", authorizationAmt: " + authorizationAmt + ", authorizationDttm: "
+				+ authorizationDttm + ", authorizationTypeNm: " + authorizationTypeNm + ", transactionAmt: "
+				+ transactionAmt;
 	}
 
 }

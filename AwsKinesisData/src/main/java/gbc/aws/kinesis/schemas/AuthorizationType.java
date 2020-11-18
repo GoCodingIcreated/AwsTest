@@ -22,6 +22,7 @@ public class AuthorizationType implements Serializable {
 		this.authorizationTypeNm = authorizationTypeNm;
 	}
 
+
 	public AuthorizationType(AuthorizationType authType) {
 		super();
 		this.authorizationTypeId = authType.authorizationTypeId;
@@ -44,6 +45,11 @@ public class AuthorizationType implements Serializable {
 
 	public void setAuthorizationTypeId(Integer authorizationTypeId) {
 		this.authorizationTypeId = authorizationTypeId;
+	}
+
+	@Override
+	public String toString() {
+		return "authorizationTypeId: " + authorizationTypeId + ", authorizationTypeNm: " + authorizationTypeNm;
 	}
 
 }

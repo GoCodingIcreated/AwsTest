@@ -1,10 +1,17 @@
 package gbc.aws.kinesis.schemas;
 
+import java.io.Serializable;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AuthorizationXType extends Authorization {
-	protected static final long serialVersionUID = 1L;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
+
+@DynamoDBTable(tableName = "AUTH_X_TYPE")
+public class AuthorizationXType extends Authorization implements Serializable {
+	private static final long serialVersionUID = 1L;
 	protected static final Logger log = LoggerFactory.getLogger(AuthorizationXType.class);
 	protected String authorizationTypeNm;
 
@@ -34,8 +41,8 @@ public class AuthorizationXType extends Authorization {
 		}
 	}
 
-	public AuthorizationXType(Integer authorizationId, Integer authorizationTypeId, Double authorizationAmt, Integer cardId,
-			String authorizationDttm, String authorizationTypeNm) {
+	public AuthorizationXType(Integer authorizationId, Integer authorizationTypeId, Double authorizationAmt,
+			Integer cardId, String authorizationDttm, String authorizationTypeNm) {
 		super(authorizationId, authorizationTypeId, authorizationAmt, cardId, authorizationDttm);
 		this.authorizationTypeNm = authorizationTypeNm;
 	}
@@ -50,9 +57,44 @@ public class AuthorizationXType extends Authorization {
 		this.authorizationTypeNm = auth.authorizationTypeNm;
 	}
 
+	public AuthorizationXType(AuthorizationXType auth, AuthorizationType authType) {
+		super(auth);
+		this.authorizationTypeNm = authType.authorizationTypeNm;
+	}
+	
 	@Override
 	public String toString() {
 		return super.toString() + ", authorizationTypeNm: " + authorizationTypeNm;
+	}
+
+	@Override
+	@DynamoDBHashKey(attributeName = "AUTHORIZATION_ID")
+	public Integer getAuthorizationId() {
+		return authorizationId;
+	}
+
+	@Override
+	@DynamoDBAttribute(attributeName = "AUTHORIZATION_TYPE_ID")
+	public Integer getAuthorizationTypeId() {
+		return authorizationTypeId;
+	}
+
+	@Override
+	@DynamoDBAttribute(attributeName = "AUTHORIZATION_AMT")
+	public Double getAuthorizationAmt() {
+		return authorizationAmt;
+	}
+
+	@Override
+	@DynamoDBAttribute(attributeName = "CARD_ID")
+	public Integer getCardId() {
+		return cardId;
+	}
+
+	@Override
+	@DynamoDBAttribute(attributeName = "AUTHORIZATION_DTTM")
+	public String getAuthorizationDttm() {
+		return authorizationDttm;
 	}
 
 }

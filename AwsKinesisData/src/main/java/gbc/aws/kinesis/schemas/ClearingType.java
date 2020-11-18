@@ -46,4 +46,9 @@ public class ClearingType implements Serializable {
 		this.clearingTypeId = clearingTypeId;
 	}
 
+	@Override
+	public String toString() {
+		return "clearingTypeId: " + clearingTypeId + ", clearingTypeNm: " + clearingTypeNm;
+	}
+
 }

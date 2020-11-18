@@ -1,8 +1,5 @@
 package gbc.aws.kinesis.streams;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Properties;
 
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
@@ -19,30 +16,23 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.kinesisanalytics.model.KinesisStreamsInput;
 
-import gbc.aws.kinesis.schemas.Authorization;
-import gbc.aws.kinesis.schemas.AuthorizationType;
-import gbc.aws.kinesis.schemas.AuthorizationXType;
 import gbc.aws.kinesis.schemas.AwsKinesisData;
+import gbc.aws.kinesis.schemas.Clearing;
+import gbc.aws.kinesis.schemas.ClearingType;
+import gbc.aws.kinesis.schemas.ClearingXType;
 import gbc.aws.kinesis.schemas.ProjectSchema;
-
-/**
- * A basic Kinesis Data Analytics for Java application with Kinesis data streams
- * as source and sink.
- */
 
 public class ClrLookUp {
 	private static final String region = "us-east-1";
-	private static final String inputStreamName = "test_in_auth_ss";
-	private static final String outputStreamName = "AUTH_FILTERED";
+	private static final String inputStreamName = "test_in_clr_ss";
+	private static final String outputStreamName = "CLR_X_TYPE";
 
-	private static final List<String> allowedAuthType = new ArrayList<>(
-			Arrays.asList(new String[] { "authorization_type_10000015", "authorization_type_10000017" }));
 	private static final Logger log = LoggerFactory.getLogger(ClrLookUp.class);
 
 	private static final AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
 
 	private static final String aws_access_key_id = AwsKinesisData.getAwsAccessKeyId();
-    private static final String aws_secret_access_key = AwsKinesisData.getAwsSecretAccessKey();
+	private static final String aws_secret_access_key = AwsKinesisData.getAwsSecretAccessKey();
 
 	private static DataStream<String> createSourceFromStaticConfig(StreamExecutionEnvironment env) {
 		Properties inputProperties = new Properties();
@@ -54,12 +44,12 @@ public class ClrLookUp {
 		return env.addSource(new FlinkKinesisConsumer<>(inputStreamName, new SimpleStringSchema(), inputProperties));
 	}
 
-	private static FlinkKinesisProducer<AuthorizationXType> createSinkFromStaticConfig() {
+	private static FlinkKinesisProducer<ClearingXType> createSinkFromStaticConfig() {
 		Properties outputProperties = new Properties();
 		outputProperties.setProperty(ConsumerConfigConstants.AWS_REGION, region);
 		outputProperties.setProperty("AggregationEnabled", "false");
-		FlinkKinesisProducer<AuthorizationXType> sink = new FlinkKinesisProducer<AuthorizationXType>(
-				new ProjectSchema<>(AuthorizationXType.class), outputProperties);
+		FlinkKinesisProducer<ClearingXType> sink = new FlinkKinesisProducer<ClearingXType>(
+				new ProjectSchema<>(ClearingXType.class), outputProperties);
 		sink.setDefaultStream(outputStreamName);
 		sink.setDefaultPartition("0");
 		new KinesisStreamsInput();
@@ -67,37 +57,23 @@ public class ClrLookUp {
 	}
 
 	public static void main(String[] args) throws Exception {
-		// set up the streaming execution environment
+
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-		/*
-		 * if you would like to use runtime configuration properties, uncomment the
-		 * lines below DataStream<String> input =
-		 * createSourceFromApplicationProperties(env);
-		 */
 		DataStream<String> input = createSourceFromStaticConfig(env);
-		DataStream<AuthorizationXType> auth = input.flatMap((value, coll) -> {
-			Authorization authRec = new Authorization(value);
+		DataStream<ClearingXType> clr = input.map((value) -> {
+			Clearing clrRec = new Clearing(value);
 			DynamoDBMapper mapper = new DynamoDBMapper(client);
-			AuthorizationType authType = mapper.load(AuthorizationType.class, authRec.getAuthorizationTypeId());
-			AuthorizationXType authWithType = new AuthorizationXType(authRec, authType.getAuthorizationTypeNm());
+			ClearingType clrType = mapper.load(ClearingType.class, clrRec.getclearingTypeId());
+			ClearingXType clrWithType = new ClearingXType(clrRec, clrType.getClearingTypeNm());
 
-			if (allowedAuthType.contains(authWithType.getAuthorizationTypeNm())) {
-				log.info("Map 1: Collected value: " + value + ", authRec: " + authRec + ", authType: " + authType
-						+ ", authWithType: " + authWithType);
-				coll.collect(authWithType);
-			} else {
-				log.info("Map 1: Not collected value: " + value + ", authRec: " + authRec + ", authType: " + authType
-						+ ", authWithType: " + authWithType);
-			}
-			// return authWithType;
+			log.info("Map 1: Value: " + value + ", clrRec: " + clrRec + ", clrType: " + clrType + ", clrWithType: "
+					+ clrWithType);
+
+			return clrWithType;
 		});
-		/*
-		 * if you would like to use runtime configuration properties, uncomment the
-		 * lines below input.addSink(createSinkFromApplicationProperties())
-		 */
-		auth.addSink(createSinkFromStaticConfig());
 
+		clr.addSink(createSinkFromStaticConfig());
 		env.execute("Authorization with LookUp v.1.0.8.");
 	}
 }

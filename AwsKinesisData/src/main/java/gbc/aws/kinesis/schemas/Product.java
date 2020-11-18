@@ -47,4 +47,9 @@ public class Product implements Serializable {
 		this.productNm = productNm;
 	}
 
+	@Override
+	public String toString() {
+		return "productId: " + productId + ", productNm: " + productNm;
+	}
+
 }

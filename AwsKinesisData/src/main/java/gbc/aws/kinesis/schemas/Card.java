@@ -84,8 +84,8 @@ public class Card implements Serializable {
 
 	@Override
 	public String toString() {
-		return "cardId:  " + cardId + ", agreementId:  " + agreementId + ", startDt:  " + startDt + ", finishDt:  "
-				+ finishDt + ", cardNumber:  " + cardNumber;
+		return "cardId: " + cardId + ", agreementId: " + agreementId + ", startDt: " + startDt + ", finishDt: "
+				+ finishDt + ", cardNumber: " + cardNumber;
 	}
 
 }

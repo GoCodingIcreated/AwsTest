@@ -37,6 +37,15 @@ public class Clearing implements Serializable {
 		}
 	}
 
+	public Clearing(Clearing clr) {
+		this.clearingId = clr.clearingId;
+		this.clearingTypeId = clr.clearingTypeId;
+		this.authorizationId = clr.authorizationId;
+		this.clearingAmt = clr.clearingAmt;
+		this.cardId = clr.cardId;
+		this.clearingDttm = clr.clearingDttm;
+	}
+	
 	public Clearing(Integer clearingId, Integer clearingTypeId, Integer authorizationId, Double clearingAmt, Integer cardId,
 			String clearingDttm) {
 		super();
