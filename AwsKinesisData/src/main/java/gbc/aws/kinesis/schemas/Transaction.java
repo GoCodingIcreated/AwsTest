@@ -41,6 +41,22 @@ public class Transaction  implements Serializable {
 		this.transactionAmt = transactionAmt;
 	}
 
+	public Transaction(Authorization auth, Clearing clr) {
+		this.transactionId = auth.authorizationId;
+		this.clearingId = clr.clearingId;
+		this.clearingTypeId = clr.clearingTypeId;
+		this.authorizationId = auth.authorizationId;
+		this.clearingAmt = clr.clearingAmt;
+		this.cardId = auth.cardId;
+		this.clearingDttm = clr.clearingDttm;
+//		this.clearingTypeNm = clr.clearingTypeNm;
+		this.authorizationTypeId = auth.authorizationTypeId;
+		this.authorizationAmt = auth.authorizationAmt;
+		this.authorizationDttm = auth.authorizationDttm;
+//		this.authorizationTypeNm = auth.authorizationTypeNm;
+		this.transactionAmt = auth.authorizationAmt;
+	}
+	
 	public Transaction(AuthorizationXType auth) {
 		this.transactionId = auth.authorizationId;			
 		this.authorizationId = auth.authorizationId;		
