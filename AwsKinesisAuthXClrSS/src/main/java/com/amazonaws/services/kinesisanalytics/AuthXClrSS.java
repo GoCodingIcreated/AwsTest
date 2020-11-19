@@ -1,8 +1,10 @@
 package com.amazonaws.services.kinesisanalytics;
 
 import gbc.aws.kinesis.schemas.Authorization;
+import gbc.aws.kinesis.schemas.AuthorizationXType;
 import gbc.aws.kinesis.schemas.AwsKinesisData;
 import gbc.aws.kinesis.schemas.Clearing;
+import gbc.aws.kinesis.schemas.ClearingXType;
 import gbc.aws.kinesis.schemas.ProjectSchema;
 import gbc.aws.kinesis.schemas.Transaction;
 
@@ -33,24 +35,24 @@ public class AuthXClrSS {
 	private static final String aws_access_key_id = AwsKinesisData.getAwsAccessKeyId();
 	private static final String aws_secret_access_key = AwsKinesisData.getAwsSecretAccessKey();
 
-    private static DataStream<String> createSource1FromStaticConfig(StreamExecutionEnvironment env) {
+    private static DataStream<AuthorizationXType> createSource1FromStaticConfig(StreamExecutionEnvironment env) {
         Properties inputProperties = new Properties();
         inputProperties.setProperty(ConsumerConfigConstants.AWS_REGION, region);
         inputProperties.setProperty(ConsumerConfigConstants.AWS_ACCESS_KEY_ID, aws_access_key_id);
         inputProperties.setProperty(ConsumerConfigConstants.AWS_SECRET_ACCESS_KEY, aws_secret_access_key);
         inputProperties.setProperty(ConsumerConfigConstants.STREAM_INITIAL_POSITION, "LATEST");
 
-        return env.addSource(new FlinkKinesisConsumer<>(inputStreamName1, new SimpleStringSchema(), inputProperties));
+        return env.addSource(new FlinkKinesisConsumer<>(inputStreamName1, new ProjectSchema<>(AuthorizationXType.class), inputProperties));
     }
     
-    private static DataStream<String> createSource2FromStaticConfig(StreamExecutionEnvironment env) {
+    private static DataStream<ClearingXType> createSource2FromStaticConfig(StreamExecutionEnvironment env) {
         Properties inputProperties = new Properties();
         inputProperties.setProperty(ConsumerConfigConstants.AWS_REGION, region);
         inputProperties.setProperty(ConsumerConfigConstants.AWS_ACCESS_KEY_ID, aws_access_key_id);
         inputProperties.setProperty(ConsumerConfigConstants.AWS_SECRET_ACCESS_KEY, aws_secret_access_key);
         inputProperties.setProperty(ConsumerConfigConstants.STREAM_INITIAL_POSITION, "LATEST");
 
-        return env.addSource(new FlinkKinesisConsumer<>(inputStreamName2, new SimpleStringSchema(), inputProperties));
+        return env.addSource(new FlinkKinesisConsumer<>(inputStreamName2, new ProjectSchema<>(ClearingXType.class), inputProperties));
     }
 
     private static FlinkKinesisProducer<Transaction> createSinkFromStaticConfig() {
@@ -73,48 +75,48 @@ public class AuthXClrSS {
         env.setStreamTimeCharacteristic(TimeCharacteristic.IngestionTime);
 
 
-        DataStream<String> input1 = createSource1FromStaticConfig(env);
-		DataStream<Authorization> auth = input1.flatMap((value, coll) -> {
-			Authorization authRec = new Authorization(value);
+        DataStream<AuthorizationXType> auth = createSource1FromStaticConfig(env);
+//		 = input1.flatMap((value, coll) -> {
+//			Authorization authRec = new Authorization(value);
+//		
+//			log.info("Authorization Map 1: Collected value: " + value + ", authRec: " + authRec);
+//			coll.collect(authRec);
+//			});
 		
-			log.info("Authorization Map 1: Collected value: " + value + ", authRec: " + authRec);
-			coll.collect(authRec);
-			});
-		
-        DataStream<String> input2 = createSource2FromStaticConfig(env);
-		DataStream<Clearing> clr = input2.flatMap((value, coll) -> {
-			Clearing clrRec = new Clearing(value);
-		
-			log.info("Clearing Map 1: Collected value: " + value + ", clrRec: " + clrRec);
-			coll.collect(clrRec);
-			});
+        DataStream<ClearingXType> clr = createSource2FromStaticConfig(env);
+//		DataStream<Clearing> clr = input2.flatMap((value, coll) -> {
+//			Clearing clrRec = new Clearing(value);
+//		
+//			log.info("Clearing Map 1: Collected value: " + value + ", clrRec: " + clrRec);
+//			coll.collect(clrRec);
+//			});
                
 		auth.join(clr)
-			.where(new KeySelector<Authorization, Integer>() {
+			.where(new KeySelector<AuthorizationXType, Integer>() {
 
 				private static final long serialVersionUID = 1L;
 
 				@Override
-				  public Integer getKey(Authorization value) {
+				  public Integer getKey(AuthorizationXType value) {
 					  return value.getAuthorizationId();
 				  }
 		    })
-			.equalTo(new KeySelector<Clearing, Integer>() {
+			.equalTo(new KeySelector<ClearingXType, Integer>() {
 
 				private static final long serialVersionUID = 1L;
 
 				@Override
-				  public Integer getKey(Clearing value) {
+				  public Integer getKey(ClearingXType value) {
 					return value.getAuthorizationId();
 				  }
 		    })
 			.window(TumblingEventTimeWindows.of(Time.minutes(60)))
-			.apply(new JoinFunction<Authorization, Clearing, Transaction>(){
+			.apply(new JoinFunction<AuthorizationXType, ClearingXType, Transaction>(){
 
 				private static final long serialVersionUID = 1L;
 
 				@Override
-		        public Transaction join(Authorization auth, Clearing clr) {
+		        public Transaction join(AuthorizationXType auth, ClearingXType clr) {
 		            Transaction trans = new Transaction(auth, clr);
 		            log.info("AuthXClrSS transaction: " + trans);
 		        	return trans;
