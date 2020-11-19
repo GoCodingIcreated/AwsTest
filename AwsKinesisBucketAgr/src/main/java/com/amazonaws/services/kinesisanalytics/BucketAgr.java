@@ -84,7 +84,7 @@ public class BucketAgr {
     }
     
     public static class PseudoWindow extends 
-    KeyedProcessFunction<Integer, TurnXAgrXProd, Bucket> {
+    KeyedProcessFunction<Integer, TurnXAgrXProd, Collector<Bucket>> {
 
 		private static final long serialVersionUID = 1L;
 		private final long durationMsec;
@@ -106,7 +106,7 @@ public class BucketAgr {
 		public void processElement(
 				TurnXAgrXProd record,
 		        Context ctx,
-		        Bucket out) throws Exception {
+		        Collector<Bucket> out) throws Exception {
 			
 			long eventTime = System.currentTimeMillis();
 		    TimerService timerService = ctx.timerService();
@@ -126,11 +126,12 @@ public class BucketAgr {
 		        }
 		        sum += record.getTurnAmt();
 		        sumOfTransaction.put(stateKey, sum);
-//			    Bucket result = new Bucket();
+			    Bucket result = new Bucket();
 			    log.info("Got timers: eventTime: " + eventTime + " endOfWindow: " + endOfWindow + " currentWatermark: " + timerService.currentWatermark());
 			    log.info("Got result: " + stateKey + ":" + sum);
-			    out.setCustomerId(stateKey);
-			    out.setCustomerTurnAmt(sum);
+			    result.setCustomerId(stateKey);
+			    result.setCustomerTurnAmt(sum);
+			    out.collect(result);
 		    }
 		}
 		
