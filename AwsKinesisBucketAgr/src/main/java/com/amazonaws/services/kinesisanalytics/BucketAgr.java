@@ -84,7 +84,7 @@ public class BucketAgr {
     }
     
     public static class PseudoWindow extends 
-    KeyedProcessFunction<Integer, TurnXAgrXProd, Collector<Bucket>> {
+    KeyedProcessFunction<Integer, TurnXAgrXProd, Bucket> {
 
 		private static final long serialVersionUID = 1L;
 		private final long durationMsec;
@@ -138,15 +138,15 @@ public class BucketAgr {
 		@Override
 		public void onTimer(long timestamp, 
 		        OnTimerContext context, 
-		        Bucket out) throws Exception {
+		        Collector<Bucket> out) throws Exception {
 			
 		    Integer key = context.getCurrentKey();
 			log.info("PseudoWindow timer expired! Key: " + key);
 		    // Look up the result for the hour that just ended.
 //		    Double sumOfTransaction = this.sumOfTransaction.get(key);
 	
-//		    Bucket result = Tuple2.of(key, sumOfTransaction);
-//		    out = result;
+		    Bucket result = new Bucket();
+		    out.collect(result);
 		    this.sumOfTransaction.clear();
 		
 		}
