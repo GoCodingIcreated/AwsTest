@@ -31,10 +31,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
 
-/**
- * A basic Kinesis Data Analytics for Java application with Kinesis data
- * streams as source and sink.
- */
 public class TurnAgr {
 	
 	private static final Logger log = LoggerFactory.getLogger(TurnAgr.class);
@@ -70,64 +66,17 @@ public class TurnAgr {
 
 
     public static void main(String[] args) throws Exception {
-        // set up the streaming execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        /* if you would like to use runtime configuration properties, uncomment the lines below
-         * DataStream<String> input = createSourceFromApplicationProperties(env);
-         */
         DataStream<TransactionXCard> turn = createSourceFromStaticConfig(env);
-//         
-//		DataStream<String> auth = input.map((value) -> {			
-//			String str[] = value.split(";");
-//			HashMap<String,String> map = new HashMap<String, String>();
-//			log.info("Got records: " + str.length);
-//	        for(int i=1;i<str.length;i++){
-//	            map.put(String.valueOf(i), str[i]);
-//	            log.info("Got subvalue: " + str[i]);
-//	        }
-//			log.info("Got value: " + value + ", transformed to: " + map.toString());
-//			return map.toString();
-//		});
-		
-//		input.flatMap(new serialToTuple())
-//			.keyBy(0)
-//			.timeWindow(Time.minutes(5))
-//			.sum(2)
-//			.map((value) -> { 
-//				String result = value.f0.toString() + "," + value.f2.toString() + "\n";
-//				log.info("Got result: " + result);
-//				return result;
-//				})
-//			.addSink(createSinkFromStaticConfig());
         
-		turn // .flatMap(new serialToTuple())
-		.keyBy((value) -> {	log.info("Got key value: " + value.getCardNumber());
+		turn.keyBy((value) -> {	log.info("Got key value: " + value.getCardNumber());
 					return value.getCardNumber();
 					}
 				)
-		.process(new PseudoWindow(Time.minutes(5)))
-//		.map((value) -> { 
-//			String result = value.f0.toString() + "," + value.f1.toString() + "\n";
-//			log.info("Got result: " + result);
-//			return result;
-//			})
+		.process(new PseudoWindow(Time.days(30)))
 		.addSink(createSinkFromStaticConfig());
 		
-		
-
-//		auth.keyBy(0)
-//			.timeWindow(Time.seconds(60))
-//			.sum(2)
-//			.map((value) -> {							
-//				return value.toString();
-//			})
-//			;
-		
-        /* if you would like to use runtime configuration properties, uncomment the lines below
-         * input.addSink(createSinkFromApplicationProperties())
-         */
-//        auth.addSink(createSinkFromStaticConfig());
 
         env.execute("Flink Streaming Java API Skeleton");
     }
@@ -172,8 +121,7 @@ public class TurnAgr {
 //		        timerService.registerEventTimeTimer(endOfWindow);
 		        timerService.registerProcessingTimeTimer(endOfWindow);
 
-		        // Add this fare's tip to the running total for that window.
-		        String stateKey = record.getCardNumber(); //+ String.valueOf(endOfWindow);
+		        String stateKey = record.getCardNumber(); 
 		        Double sum = sumOfTransaction.get(stateKey);
 		        if (sum == null) {
 		            sum = 0.0;
@@ -202,11 +150,6 @@ public class TurnAgr {
 			
 		    String key = context.getCurrentKey();
 			log.info("PseudoWindow timer expired! Key: " + key);
-		    // Look up the result for the hour that just ended.
-//		    Double sumOfTransaction = this.sumOfTransaction.get(key);
-	
-//		    Turn result = new Turn();
-//		    out.collect(result);
 		    this.sumOfTransaction.clear();
 		
 		}
