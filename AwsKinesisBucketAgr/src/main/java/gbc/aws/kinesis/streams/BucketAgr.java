@@ -1,17 +1,12 @@
-package com.amazonaws.services.kinesisanalytics;
+package gbc.aws.kinesis.streams;
 
 import gbc.aws.kinesis.schemas.AwsKinesisData;
 import gbc.aws.kinesis.schemas.Bucket;
 import gbc.aws.kinesis.schemas.ProjectSchema;
-import gbc.aws.kinesis.schemas.Transaction;
 import gbc.aws.kinesis.schemas.TurnXAgrXProd;
 
-import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
-import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.api.java.tuple.Tuple8;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.TimerService;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -32,8 +27,8 @@ public class BucketAgr {
 	private static final Logger log = LoggerFactory.getLogger(BucketAgr.class);
 	
     private static final String region = "us-east-1";
-    private static final String inputStreamName = "test_out_transction_ss";
-    private static final String outputStreamName = "test_out_bucket_agr";
+    private static final String inputStreamName = "test_turn_x_agr_x_prod";
+    private static final String outputStreamName = "test_bucket_agr";
 	private static final String aws_access_key_id = AwsKinesisData.getAwsAccessKeyId();
 	private static final String aws_secret_access_key = AwsKinesisData.getAwsSecretAccessKey();
 
@@ -66,18 +61,12 @@ public class BucketAgr {
         DataStream<TurnXAgrXProd> turnXAgrXProd = createSourceFromStaticConfig(env);
         
         
-        turnXAgrXProd //.flatMap(new serialToTuple())
-		.keyBy((value) -> {	
+        turnXAgrXProd.keyBy((value) -> {	
 					log.info("Got key value: " + value.getCustomerId());
 					return value.getCustomerId();
 					}
 				)
 		.process(new PseudoWindow(Time.days(30)))
-//		.map((value) -> { 
-//			Bucket result = value.getCustomerId() + "," + value.getMonthDt() + "\n";
-//			log.info("Got result: " + result);
-//			return result;
-//			})
 		.addSink(createSinkFromStaticConfig());
 
         env.execute("Flink Streaming Java API Skeleton");
@@ -128,7 +117,7 @@ public class BucketAgr {
 		        sumOfTransaction.put(stateKey, sum);
 			    Bucket result = new Bucket();
 			    log.info("Got timers: eventTime: " + eventTime + " endOfWindow: " + endOfWindow + " currentWatermark: " + timerService.currentWatermark());
-			    log.info("Got result: " + stateKey + ":" + sum);
+			    log.info("Got result: CustomerId: " + stateKey + " getTurnAmt: " + sum);
 			    result.setCustomerId(stateKey);
 			    result.setCustomerTurnAmt(sum);
 			    out.collect(result);
