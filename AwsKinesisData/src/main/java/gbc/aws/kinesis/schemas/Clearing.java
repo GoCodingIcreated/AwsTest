@@ -107,9 +107,8 @@ public class Clearing implements Serializable {
 
 	@Override
 	public String toString() {
-		return "clearingId: " + clearingId + ", clearingTypeId: " + clearingTypeId + ", authorizationId: "
-				+ authorizationId + ", clearingAmt: " + clearingAmt + ", cardId: " + cardId + ", clearingDttm: "
-				+ clearingDttm;
+		return clearingId + ";" + clearingTypeId + ";" + authorizationId + ";" + clearingAmt + ";"
+				+ cardId + ";" + clearingDttm;
 	}
 
 }

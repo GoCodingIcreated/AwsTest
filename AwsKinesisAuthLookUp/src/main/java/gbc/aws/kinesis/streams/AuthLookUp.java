@@ -5,12 +5,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
+import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisConsumer;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisProducer;
 import org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConstants;
+import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +25,6 @@ import gbc.aws.kinesis.schemas.Authorization;
 import gbc.aws.kinesis.schemas.AuthorizationType;
 import gbc.aws.kinesis.schemas.AuthorizationXType;
 import gbc.aws.kinesis.schemas.AwsKinesisData;
-import gbc.aws.kinesis.schemas.ProjectSchema;
 
 public class AuthLookUp {
 	private static final String region = "us-east-1";
@@ -49,12 +50,12 @@ public class AuthLookUp {
 		return env.addSource(new FlinkKinesisConsumer<>(inputStreamName, new SimpleStringSchema(), inputProperties));
 	}
 
-	private static FlinkKinesisProducer<AuthorizationXType> createSinkFromStaticConfig() {
+	private static FlinkKinesisProducer<String> createSinkFromStaticConfig() {
 		Properties outputProperties = new Properties();
 		outputProperties.setProperty(ConsumerConfigConstants.AWS_REGION, region);
 		outputProperties.setProperty("AggregationEnabled", "false");
-		FlinkKinesisProducer<AuthorizationXType> sink = new FlinkKinesisProducer<AuthorizationXType>(
-				new ProjectSchema<>(AuthorizationXType.class), outputProperties);
+		FlinkKinesisProducer<String> sink = new FlinkKinesisProducer<String>(new SimpleStringSchema(),
+				outputProperties);
 		sink.setDefaultStream(outputStreamName);
 		sink.setDefaultPartition("0");
 		new KinesisStreamsInput();
@@ -66,25 +67,30 @@ public class AuthLookUp {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
 		DataStream<String> input = createSourceFromStaticConfig(env);
-		DataStream<AuthorizationXType> auth = input.flatMap((value, coll) -> {
-			Authorization authRec = new Authorization(value);
-			DynamoDBMapper mapper = new DynamoDBMapper(client);
-			AuthorizationType authType = mapper.load(AuthorizationType.class, authRec.getAuthorizationTypeId());
-			AuthorizationXType authWithType = new AuthorizationXType(authRec, authType.getAuthorizationTypeNm());
+		DataStream<String> auth = input.flatMap(new FlatMapFunction<String, String>() {
+			private static final long serialVersionUID = 1L;
 
-			if (allowedAuthType.contains(authWithType.getAuthorizationTypeNm())) {
-				log.info("Map 1: Collected value: " + value + ", authRec: " + authRec + ", authType: " + authType
-						+ ", authWithType: " + authWithType);
-				coll.collect(authWithType);
-			} else {
-				log.info("Map 1: Not collected value: " + value + ", authRec: " + authRec + ", authType: " + authType
-						+ ", authWithType: " + authWithType);
+			@Override
+			public void flatMap(String value, Collector<String> out) throws Exception {
+				log.info("Map 1: Got value: " + value);
+				Authorization authRec = new Authorization(value);
+				DynamoDBMapper mapper = new DynamoDBMapper(client);
+				AuthorizationType authType = mapper.load(AuthorizationType.class, authRec.getAuthorizationTypeId());
+				AuthorizationXType authWithType = new AuthorizationXType(authRec, authType.getAuthorizationTypeNm());
+
+				if (allowedAuthType.contains(authWithType.getAuthorizationTypeNm())) {
+					log.info("Map 1: Collected value: " + value + ", authRec: " + authRec + ", authType: " + authType
+							+ ", authWithType: " + authWithType);
+					out.collect(authWithType.toString());
+				} else {
+					log.info("Map 1: Not collected value: " + value + ", authRec: " + authRec + ", authType: "
+							+ authType + ", authWithType: " + authWithType);
+				}
 			}
-
 		});
 
 		auth.addSink(createSinkFromStaticConfig());
 
-		env.execute("Authorization with LookUp v.1.0.8.");
+		env.execute("AuthLookUp v.1.11");
 	}
 }

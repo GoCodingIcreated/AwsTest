@@ -20,7 +20,7 @@ import gbc.aws.kinesis.schemas.AwsKinesisData;
 import gbc.aws.kinesis.schemas.Clearing;
 import gbc.aws.kinesis.schemas.ClearingType;
 import gbc.aws.kinesis.schemas.ClearingXType;
-import gbc.aws.kinesis.schemas.ProjectSchema;
+
 
 public class ClrLookUp {
 	private static final String region = "us-east-1";
@@ -44,12 +44,12 @@ public class ClrLookUp {
 		return env.addSource(new FlinkKinesisConsumer<>(inputStreamName, new SimpleStringSchema(), inputProperties));
 	}
 
-	private static FlinkKinesisProducer<ClearingXType> createSinkFromStaticConfig() {
+	private static FlinkKinesisProducer<String> createSinkFromStaticConfig() {
 		Properties outputProperties = new Properties();
 		outputProperties.setProperty(ConsumerConfigConstants.AWS_REGION, region);
 		outputProperties.setProperty("AggregationEnabled", "false");
-		FlinkKinesisProducer<ClearingXType> sink = new FlinkKinesisProducer<ClearingXType>(
-				new ProjectSchema<>(ClearingXType.class), outputProperties);
+		FlinkKinesisProducer<String> sink = new FlinkKinesisProducer<String>(
+				new SimpleStringSchema(), outputProperties);
 		sink.setDefaultStream(outputStreamName);
 		sink.setDefaultPartition("0");
 		new KinesisStreamsInput();
@@ -61,7 +61,7 @@ public class ClrLookUp {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
 		DataStream<String> input = createSourceFromStaticConfig(env);
-		DataStream<ClearingXType> clr = input.map((value) -> {
+		DataStream<String> clr = input.map((value) -> {
 			Clearing clrRec = new Clearing(value);
 			DynamoDBMapper mapper = new DynamoDBMapper(client);
 			ClearingType clrType = mapper.load(ClearingType.class, clrRec.getclearingTypeId());
@@ -70,10 +70,10 @@ public class ClrLookUp {
 			log.info("Map 1: Value: " + value + ", clrRec: " + clrRec + ", clrType: " + clrType + ", clrWithType: "
 					+ clrWithType);
 
-			return clrWithType;
+			return clrWithType.toString();
 		});
 
 		clr.addSink(createSinkFromStaticConfig());
-		env.execute("Authorization with LookUp v.1.0.8.");
+		env.execute("ClrLookUp v.1.0.2.");
 	}
 }
