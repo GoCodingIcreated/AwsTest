@@ -18,7 +18,6 @@ import com.amazonaws.services.kinesisanalytics.model.KinesisStreamsInput;
 
 import gbc.aws.kinesis.schemas.AwsKinesisData;
 import gbc.aws.kinesis.schemas.Card;
-import gbc.aws.kinesis.schemas.ProjectSchema;
 import gbc.aws.kinesis.schemas.Transaction;
 import gbc.aws.kinesis.schemas.TransactionXCard;
 
@@ -61,13 +60,13 @@ public class TrnLookUp {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
 		DataStream<String> input = createSourceFromStaticConfig(env);
-		DataStream<TransactionXCard> trans = input.map((trnStr) -> {
+		DataStream<String> trans = input.map((trnStr) -> {
 			DynamoDBMapper mapper = new DynamoDBMapper(client);
-			Card card = mapper.load(Card.class, trn.getCardId());
 			Transaction trn = new Transaction(trnStr);
+			Card card = mapper.load(Card.class, trn.getCardId());			
 			TransactionXCard trnXCard = new TransactionXCard(trn, card);
 			log.info("Map 1: trans: " + trn + ", card: " + card + ", transXCard: " + trnXCard);
-			return trnXCard;
+			return trnXCard.toString();
 
 		});
 

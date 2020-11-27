@@ -2,6 +2,7 @@ package gbc.aws.kinesis.streams;
 
 import java.util.Properties;
 
+import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisConsumer;
@@ -19,7 +20,7 @@ import gbc.aws.kinesis.schemas.AwsKinesisData;
 import gbc.aws.kinesis.schemas.Bucket;
 import gbc.aws.kinesis.schemas.BucketXCustomer;
 import gbc.aws.kinesis.schemas.Customer;
-import gbc.aws.kinesis.schemas.ProjectSchema;
+
 
 public class BucketLookUp {
 	private static final String region = "us-east-1";
@@ -33,23 +34,22 @@ public class BucketLookUp {
 	private static final String aws_access_key_id = AwsKinesisData.getAwsAccessKeyId();
 	private static final String aws_secret_access_key = AwsKinesisData.getAwsSecretAccessKey();
 
-	private static DataStream<Bucket> createSourceFromStaticConfig(StreamExecutionEnvironment env) {
+	private static DataStream<String> createSourceFromStaticConfig(StreamExecutionEnvironment env) {
 		Properties inputProperties = new Properties();
 		inputProperties.setProperty(ConsumerConfigConstants.AWS_REGION, region);
 		inputProperties.setProperty(ConsumerConfigConstants.STREAM_INITIAL_POSITION, "LATEST");
 		inputProperties.setProperty(ConsumerConfigConstants.AWS_SECRET_ACCESS_KEY, aws_secret_access_key);
 		inputProperties.setProperty(ConsumerConfigConstants.AWS_ACCESS_KEY_ID, aws_access_key_id);
 
-		return env.addSource(
-				new FlinkKinesisConsumer<>(inputStreamName, new ProjectSchema<>(Bucket.class), inputProperties));
+		return env.addSource(new FlinkKinesisConsumer<>(inputStreamName, new SimpleStringSchema(), inputProperties));
 	}
 
-	private static FlinkKinesisProducer<BucketXCustomer> createSinkFromStaticConfig() {
+	private static FlinkKinesisProducer<String> createSinkFromStaticConfig() {
 		Properties outputProperties = new Properties();
 		outputProperties.setProperty(ConsumerConfigConstants.AWS_REGION, region);
 		outputProperties.setProperty("AggregationEnabled", "false");
-		FlinkKinesisProducer<BucketXCustomer> sink = new FlinkKinesisProducer<BucketXCustomer>(
-				new ProjectSchema<>(BucketXCustomer.class), outputProperties);
+		FlinkKinesisProducer<String> sink = new FlinkKinesisProducer<String>(new SimpleStringSchema(),
+				outputProperties);
 		sink.setDefaultStream(outputStreamName);
 		sink.setDefaultPartition("0");
 		new KinesisStreamsInput();
@@ -59,13 +59,14 @@ public class BucketLookUp {
 	public static void main(String[] args) throws Exception {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-		DataStream<Bucket> input = createSourceFromStaticConfig(env);
-		DataStream<BucketXCustomer> bucketXCustomer = input.map((bucket) -> {
+		DataStream<String> input = createSourceFromStaticConfig(env);
+		DataStream<String> bucketXCustomer = input.map((bucketStr) -> {
+			Bucket bucket = new Bucket(bucketStr);
 			DynamoDBMapper mapper = new DynamoDBMapper(client);
 			Customer customer = mapper.load(Customer.class, bucket.getCustomerId());
 			BucketXCustomer bucketXCust = new BucketXCustomer(bucket, customer);
 			log.info("Map 1: bucket: " + bucket + ", customer: " + customer + ", bucketXCust: " + bucketXCust);
-			return bucketXCust;
+			return bucketXCust.toString();
 
 		});
 

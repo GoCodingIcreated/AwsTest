@@ -1,10 +1,8 @@
 package gbc.aws.kinesis.streams;
 
-import gbc.aws.kinesis.schemas.AwsKinesisData;
-import gbc.aws.kinesis.schemas.Bucket;
-import gbc.aws.kinesis.schemas.ProjectSchema;
-import gbc.aws.kinesis.schemas.TurnXAgrXProd;
+import java.util.Properties;
 
+import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.configuration.Configuration;
@@ -20,7 +18,9 @@ import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Properties;
+import gbc.aws.kinesis.schemas.AwsKinesisData;
+import gbc.aws.kinesis.schemas.Bucket;
+import gbc.aws.kinesis.schemas.TurnXAgrXProd;
 
 public class BucketAgr {
 
@@ -32,25 +32,24 @@ public class BucketAgr {
 	private static final String aws_access_key_id = AwsKinesisData.getAwsAccessKeyId();
 	private static final String aws_secret_access_key = AwsKinesisData.getAwsSecretAccessKey();
 
-	private static DataStream<TurnXAgrXProd> createSourceFromStaticConfig(StreamExecutionEnvironment env) {
+	private static DataStream<String> createSourceFromStaticConfig(StreamExecutionEnvironment env) {
 		Properties inputProperties = new Properties();
 		inputProperties.setProperty(ConsumerConfigConstants.AWS_REGION, region);
 		inputProperties.setProperty(ConsumerConfigConstants.AWS_ACCESS_KEY_ID, aws_access_key_id);
 		inputProperties.setProperty(ConsumerConfigConstants.AWS_SECRET_ACCESS_KEY, aws_secret_access_key);
 		inputProperties.setProperty(ConsumerConfigConstants.STREAM_INITIAL_POSITION, "LATEST");
 
-		return env.addSource(
-				new FlinkKinesisConsumer<>(inputStreamName, new ProjectSchema<>(TurnXAgrXProd.class), inputProperties));
+		return env.addSource(new FlinkKinesisConsumer<>(inputStreamName, new SimpleStringSchema(), inputProperties));
 	}
 
-	private static FlinkKinesisProducer<Bucket> createSinkFromStaticConfig() {
+	private static FlinkKinesisProducer<String> createSinkFromStaticConfig() {
 		Properties outputProperties = new Properties();
 		outputProperties.setProperty(ConsumerConfigConstants.AWS_REGION, region);
 		outputProperties.setProperty(ConsumerConfigConstants.AWS_ACCESS_KEY_ID, aws_access_key_id);
 		outputProperties.setProperty(ConsumerConfigConstants.AWS_SECRET_ACCESS_KEY, aws_secret_access_key);
 		outputProperties.setProperty("AggregationEnabled", "false");
 
-		FlinkKinesisProducer<Bucket> sink = new FlinkKinesisProducer<Bucket>(new ProjectSchema<>(Bucket.class),
+		FlinkKinesisProducer<String> sink = new FlinkKinesisProducer<String>(new SimpleStringSchema(),
 				outputProperties);
 		sink.setDefaultStream(outputStreamName);
 		sink.setDefaultPartition("0");
@@ -60,17 +59,18 @@ public class BucketAgr {
 	public static void main(String[] args) throws Exception {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-		DataStream<TurnXAgrXProd> turnXAgrXProd = createSourceFromStaticConfig(env);
+		DataStream<String> turnXAgrXProd = createSourceFromStaticConfig(env);
 
 		turnXAgrXProd.keyBy((value) -> {
-			log.info("Got key value: " + value.getCustomerId());
-			return value.getCustomerId();
+			TurnXAgrXProd turn = new TurnXAgrXProd(value);
+			log.info("Got key value: " + turn.getCustomerId());
+			return turn.getCustomerId();
 		}).process(new PseudoWindow(Time.days(30))).addSink(createSinkFromStaticConfig());
 
 		env.execute("Flink Streaming Java API Skeleton");
 	}
 
-	public static class PseudoWindow extends KeyedProcessFunction<Integer, TurnXAgrXProd, Bucket> {
+	public static class PseudoWindow extends KeyedProcessFunction<Integer, String, String> {
 
 		private static final long serialVersionUID = 1L;
 		private final long durationMsec;
@@ -89,8 +89,8 @@ public class BucketAgr {
 		}
 
 		@Override
-		public void processElement(TurnXAgrXProd record, Context ctx, Collector<Bucket> out) throws Exception {
-
+		public void processElement(String record, Context ctx, Collector<String> out) throws Exception {
+			TurnXAgrXProd turn = new TurnXAgrXProd(record);
 			long eventTime = System.currentTimeMillis();
 			TimerService timerService = ctx.timerService();
 
@@ -102,25 +102,24 @@ public class BucketAgr {
 
 				timerService.registerProcessingTimeTimer(endOfWindow);
 
-				Integer stateKey = record.getCustomerId();
+				Integer stateKey = turn.getCustomerId();
 				Double sum = sumOfTransaction.get(stateKey);
 				if (sum == null) {
 					sum = 0.0;
 				}
-				sum += record.getTurnAmt();
+				sum += turn.getTurnAmt();
 				sumOfTransaction.put(stateKey, sum);
-				Bucket result = new Bucket();
+				Bucket result = new Bucket(turn);
 				log.info("Got timers: eventTime: " + eventTime + " endOfWindow: " + endOfWindow + " currentWatermark: "
 						+ timerService.currentWatermark());
 				log.info("Got result: CustomerId: " + stateKey + " getTurnAmt: " + sum);
-				result.setCustomerId(stateKey);
-				result.setCustomerTurnAmt(sum);
-				out.collect(result);
+				log.info("Bucket: " + result);
+				out.collect(result.toString());
 			}
 		}
 
 		@Override
-		public void onTimer(long timestamp, OnTimerContext context, Collector<Bucket> out) throws Exception {
+		public void onTimer(long timestamp, OnTimerContext context, Collector<String> out) throws Exception {
 
 			Integer key = context.getCurrentKey();
 			log.info("PseudoWindow timer expired! Key: " + key);
@@ -128,7 +127,7 @@ public class BucketAgr {
 //		    Double sumOfTransaction = this.sumOfTransaction.get(key);
 
 			Bucket result = new Bucket();
-			out.collect(result);
+			out.collect(result.toString());
 			this.sumOfTransaction.clear();
 
 		}

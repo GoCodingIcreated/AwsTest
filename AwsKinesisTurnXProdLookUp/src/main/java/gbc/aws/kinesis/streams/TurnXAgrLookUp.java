@@ -2,6 +2,7 @@ package gbc.aws.kinesis.streams;
 
 import java.util.Properties;
 
+import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisConsumer;
@@ -17,7 +18,6 @@ import com.amazonaws.services.kinesisanalytics.model.KinesisStreamsInput;
 
 import gbc.aws.kinesis.schemas.AwsKinesisData;
 import gbc.aws.kinesis.schemas.Product;
-import gbc.aws.kinesis.schemas.ProjectSchema;
 import gbc.aws.kinesis.schemas.TurnXAgr;
 import gbc.aws.kinesis.schemas.TurnXAgrXProd;
 
@@ -33,23 +33,22 @@ public class TurnXAgrLookUp {
 	private static final String aws_access_key_id = AwsKinesisData.getAwsAccessKeyId();
 	private static final String aws_secret_access_key = AwsKinesisData.getAwsSecretAccessKey();
 
-	private static DataStream<TurnXAgr> createSourceFromStaticConfig(StreamExecutionEnvironment env) {
+	private static DataStream<String> createSourceFromStaticConfig(StreamExecutionEnvironment env) {
 		Properties inputProperties = new Properties();
 		inputProperties.setProperty(ConsumerConfigConstants.AWS_REGION, region);
 		inputProperties.setProperty(ConsumerConfigConstants.STREAM_INITIAL_POSITION, "LATEST");
 		inputProperties.setProperty(ConsumerConfigConstants.AWS_SECRET_ACCESS_KEY, aws_secret_access_key);
 		inputProperties.setProperty(ConsumerConfigConstants.AWS_ACCESS_KEY_ID, aws_access_key_id);
 
-		return env.addSource(
-				new FlinkKinesisConsumer<>(inputStreamName, new ProjectSchema<>(TurnXAgr.class), inputProperties));
+		return env.addSource(new FlinkKinesisConsumer<>(inputStreamName, new SimpleStringSchema(), inputProperties));
 	}
 
-	private static FlinkKinesisProducer<TurnXAgrXProd> createSinkFromStaticConfig() {
+	private static FlinkKinesisProducer<String> createSinkFromStaticConfig() {
 		Properties outputProperties = new Properties();
 		outputProperties.setProperty(ConsumerConfigConstants.AWS_REGION, region);
 		outputProperties.setProperty("AggregationEnabled", "false");
-		FlinkKinesisProducer<TurnXAgrXProd> sink = new FlinkKinesisProducer<TurnXAgrXProd>(
-				new ProjectSchema<>(TurnXAgrXProd.class), outputProperties);
+		FlinkKinesisProducer<String> sink = new FlinkKinesisProducer<String>(new SimpleStringSchema(),
+				outputProperties);
 		sink.setDefaultStream(outputStreamName);
 		sink.setDefaultPartition("0");
 		new KinesisStreamsInput();
@@ -59,13 +58,14 @@ public class TurnXAgrLookUp {
 	public static void main(String[] args) throws Exception {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-		DataStream<TurnXAgr> input = createSourceFromStaticConfig(env);
-		DataStream<TurnXAgrXProd> turnXAgreementXProduct = input.map((turnXAgr) -> {
+		DataStream<String> input = createSourceFromStaticConfig(env);
+		DataStream<String> turnXAgreementXProduct = input.map((turnXAgrStr) -> {
+			TurnXAgr turnXAgr = new TurnXAgr(turnXAgrStr);
 			DynamoDBMapper mapper = new DynamoDBMapper(client);
 			Product prod = mapper.load(Product.class, turnXAgr.getAgreementId());
 			TurnXAgrXProd turnXAgrXProd = new TurnXAgrXProd(turnXAgr, prod);
 			log.info("Map 1: turnXAgr: " + turnXAgr + ", prod: " + prod + ", turnXAgrXProd: " + turnXAgrXProd);
-			return turnXAgrXProd;
+			return turnXAgrXProd.toString();
 		});
 
 		turnXAgreementXProduct.addSink(createSinkFromStaticConfig());

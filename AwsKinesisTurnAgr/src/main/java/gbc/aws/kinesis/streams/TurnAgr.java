@@ -3,6 +3,7 @@ package gbc.aws.kinesis.streams;
 import java.util.Properties;
 
 import org.apache.flink.api.common.functions.FlatMapFunction;
+import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.java.tuple.Tuple8;
@@ -20,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import gbc.aws.kinesis.schemas.AwsKinesisData;
-import gbc.aws.kinesis.schemas.ProjectSchema;
 import gbc.aws.kinesis.schemas.TransactionXCard;
 import gbc.aws.kinesis.schemas.Turn;
 
@@ -34,25 +34,24 @@ public class TurnAgr {
 	private static final String aws_access_key_id = AwsKinesisData.getAwsAccessKeyId();
 	private static final String aws_secret_access_key = AwsKinesisData.getAwsSecretAccessKey();
 
-	private static DataStream<TransactionXCard> createSourceFromStaticConfig(StreamExecutionEnvironment env) {
+	private static DataStream<String> createSourceFromStaticConfig(StreamExecutionEnvironment env) {
 		Properties inputProperties = new Properties();
 		inputProperties.setProperty(ConsumerConfigConstants.AWS_REGION, region);
 		inputProperties.setProperty(ConsumerConfigConstants.AWS_ACCESS_KEY_ID, aws_access_key_id);
 		inputProperties.setProperty(ConsumerConfigConstants.AWS_SECRET_ACCESS_KEY, aws_secret_access_key);
 		inputProperties.setProperty(ConsumerConfigConstants.STREAM_INITIAL_POSITION, "LATEST");
 
-		return env.addSource(new FlinkKinesisConsumer<>(inputStreamName, new ProjectSchema<>(TransactionXCard.class),
-				inputProperties));
+		return env.addSource(new FlinkKinesisConsumer<>(inputStreamName, new SimpleStringSchema(), inputProperties));
 	}
 
-	private static FlinkKinesisProducer<Turn> createSinkFromStaticConfig() {
+	private static FlinkKinesisProducer<String> createSinkFromStaticConfig() {
 		Properties outputProperties = new Properties();
 		outputProperties.setProperty(ConsumerConfigConstants.AWS_REGION, region);
 		outputProperties.setProperty(ConsumerConfigConstants.AWS_ACCESS_KEY_ID, aws_access_key_id);
 		outputProperties.setProperty(ConsumerConfigConstants.AWS_SECRET_ACCESS_KEY, aws_secret_access_key);
 		outputProperties.setProperty("AggregationEnabled", "false");
 
-		FlinkKinesisProducer<Turn> sink = new FlinkKinesisProducer<>(new ProjectSchema<>(Turn.class), outputProperties);
+		FlinkKinesisProducer<String> sink = new FlinkKinesisProducer<>(new SimpleStringSchema(), outputProperties);
 		sink.setDefaultStream(outputStreamName);
 		sink.setDefaultPartition("0");
 		return sink;
@@ -61,17 +60,18 @@ public class TurnAgr {
 	public static void main(String[] args) throws Exception {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-		DataStream<TransactionXCard> turn = createSourceFromStaticConfig(env);
+		DataStream<String> turn = createSourceFromStaticConfig(env);
 
 		turn.keyBy((value) -> {
-			log.info("Got key value: " + value.getCardNumber());
-			return value.getCardNumber();
+			TransactionXCard trn = new TransactionXCard(value);
+			log.info("Got key value: " + trn.getCardNumber());
+			return trn.getCardNumber();
 		}).process(new PseudoWindow(Time.days(30))).addSink(createSinkFromStaticConfig());
 
 		env.execute("Flink Streaming Java API Skeleton");
 	}
 
-	public static class PseudoWindow extends KeyedProcessFunction<String, TransactionXCard, Turn> {
+	public static class PseudoWindow extends KeyedProcessFunction<String, String, String> {
 
 		private static final long serialVersionUID = 1L;
 		private final long durationMsec;
@@ -90,8 +90,8 @@ public class TurnAgr {
 		}
 
 		@Override
-		public void processElement(TransactionXCard record, Context ctx, Collector<Turn> out) throws Exception {
-
+		public void processElement(String record, Context ctx, Collector<String> out) throws Exception {
+			TransactionXCard trn = new TransactionXCard(record);
 			long eventTime = System.currentTimeMillis();
 			TimerService timerService = ctx.timerService();
 
@@ -101,34 +101,32 @@ public class TurnAgr {
 
 				long endOfWindow = (eventTime - (eventTime % durationMsec) + durationMsec - 1);
 
-//		        timerService.registerEventTimeTimer(endOfWindow);
 				timerService.registerProcessingTimeTimer(endOfWindow);
 
-				String stateKey = record.getCardNumber();
+				String stateKey = trn.getCardNumber();
 				Double sum = sumOfTransaction.get(stateKey);
 				if (sum == null) {
 					sum = 0.0;
 				}
-				sum += record.getTransactionAmt();
+				sum += trn.getTransactionAmt();
 				sumOfTransaction.put(stateKey, sum);
-				Turn result = new Turn();
+				Turn result = new Turn(trn, sum, "2020-11-01");
 				log.info("Got timers: eventTime: " + eventTime + " endOfWindow: " + endOfWindow + " currentWatermark: "
 						+ timerService.currentWatermark());
 				log.info("Got result: " + stateKey + ":" + sum);
-
-				result.setAgreementId(record.getAgreementId());
-//			    result.setCardFinishDt(finishDt);;
-//			    result.setCardStartDt(startDt);
-				result.setCardId(record.getCardId());
-				result.setCardNumber(stateKey);
-//			    result.setMonthDt(monthDt);
-				result.setTurnAmt(sum);
-				out.collect(result);
+				log.info("Turn: " + result);
+				/*
+				 * result.setAgreementId(trn.getAgreementId()); //
+				 * result.setCardFinishDt(finishDt);; // result.setCardStartDt(startDt);
+				 * result.setCardId(trn.getCardId()); result.setCardNumber(stateKey); //
+				 * result.setMonthDt(monthDt); result.setTurnAmt(sum);
+				 */
+				out.collect(result.toString());
 			}
 		}
 
 		@Override
-		public void onTimer(long timestamp, OnTimerContext context, Collector<Turn> out) throws Exception {
+		public void onTimer(long timestamp, OnTimerContext context, Collector<String> out) throws Exception {
 
 			String key = context.getCurrentKey();
 			log.info("PseudoWindow timer expired! Key: " + key);
