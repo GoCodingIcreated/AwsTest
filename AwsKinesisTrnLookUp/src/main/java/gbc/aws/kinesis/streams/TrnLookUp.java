@@ -2,6 +2,7 @@ package gbc.aws.kinesis.streams;
 
 import java.util.Properties;
 
+import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisConsumer;
@@ -33,7 +34,7 @@ public class TrnLookUp {
 	private static final String aws_access_key_id = AwsKinesisData.getAwsAccessKeyId();
 	private static final String aws_secret_access_key = AwsKinesisData.getAwsSecretAccessKey();
 
-	private static DataStream<Transaction> createSourceFromStaticConfig(StreamExecutionEnvironment env) {
+	private static DataStream<String> createSourceFromStaticConfig(StreamExecutionEnvironment env) {
 		Properties inputProperties = new Properties();
 		inputProperties.setProperty(ConsumerConfigConstants.AWS_REGION, region);
 		inputProperties.setProperty(ConsumerConfigConstants.STREAM_INITIAL_POSITION, "LATEST");
@@ -41,15 +42,15 @@ public class TrnLookUp {
 		inputProperties.setProperty(ConsumerConfigConstants.AWS_ACCESS_KEY_ID, aws_access_key_id);
 
 		return env.addSource(
-				new FlinkKinesisConsumer<>(inputStreamName, new ProjectSchema<>(Transaction.class), inputProperties));
+				new FlinkKinesisConsumer<>(inputStreamName, new SimpleStringSchema(), inputProperties));
 	}
 
-	private static FlinkKinesisProducer<TransactionXCard> createSinkFromStaticConfig() {
+	private static FlinkKinesisProducer<String> createSinkFromStaticConfig() {
 		Properties outputProperties = new Properties();
 		outputProperties.setProperty(ConsumerConfigConstants.AWS_REGION, region);
 		outputProperties.setProperty("AggregationEnabled", "false");
-		FlinkKinesisProducer<TransactionXCard> sink = new FlinkKinesisProducer<TransactionXCard>(
-				new ProjectSchema<>(TransactionXCard.class), outputProperties);
+		FlinkKinesisProducer<String> sink = new FlinkKinesisProducer<String>(
+				new SimpleStringSchema(), outputProperties);
 		sink.setDefaultStream(outputStreamName);
 		sink.setDefaultPartition("0");
 		new KinesisStreamsInput();
@@ -59,10 +60,11 @@ public class TrnLookUp {
 	public static void main(String[] args) throws Exception {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-		DataStream<Transaction> input = createSourceFromStaticConfig(env);
-		DataStream<TransactionXCard> trans = input.map((trn) -> {
+		DataStream<String> input = createSourceFromStaticConfig(env);
+		DataStream<TransactionXCard> trans = input.map((trnStr) -> {
 			DynamoDBMapper mapper = new DynamoDBMapper(client);
 			Card card = mapper.load(Card.class, trn.getCardId());
+			Transaction trn = new Transaction(trnStr);
 			TransactionXCard trnXCard = new TransactionXCard(trn, card);
 			log.info("Map 1: trans: " + trn + ", card: " + card + ", transXCard: " + trnXCard);
 			return trnXCard;

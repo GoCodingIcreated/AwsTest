@@ -2,7 +2,11 @@ package gbc.aws.kinesis.schemas;
 
 import java.io.Serializable;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class TurnXAgr extends Turn implements Serializable {
+	private static final Logger log = LoggerFactory.getLogger(TurnXAgr.class);
 	private static final long serialVersionUID = 1L;
 	protected Integer customerId;
 	protected Integer productId;
@@ -64,6 +68,25 @@ public class TurnXAgr extends Turn implements Serializable {
 		this.factFinishDt = agr.factFinishDt;
 	}
 
+	public TurnXAgr(String str, String cep) {
+		super(str, cep);
+		String arr[] = str.split(cep);
+		try {
+			this.customerId = Integer.valueOf(arr[7]);
+			this.productId = Integer.valueOf(arr[8]);
+			this.agreementNumber = arr[9];
+			this.agrStartDt = arr[10];
+			this.plannedFinishDt = arr[11];
+			this.factFinishDt = arr[12];
+		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
+			log.warn("Not all fields was initialized: " + str);
+		}
+	}
+
+	public TurnXAgr(String str) {
+		this(str, ";");
+	}
+
 	public Integer getCustomerId() {
 		return customerId;
 	}
@@ -106,9 +129,8 @@ public class TurnXAgr extends Turn implements Serializable {
 
 	@Override
 	public String toString() {
-		return super.toString() + ", customerId: " + customerId + ", productId: " + productId + ", agreementNumber: "
-				+ agreementNumber + ", agrStartDt: " + agrStartDt + ", plannedFinishDt: " + plannedFinishDt
-				+ ", factFinishDt: " + factFinishDt;
+		return super.toString() + ";" + customerId + ";" + productId + ";" + agreementNumber + ";" + agrStartDt + ";"
+				+ plannedFinishDt + ";" + factFinishDt;
 	}
 
 }

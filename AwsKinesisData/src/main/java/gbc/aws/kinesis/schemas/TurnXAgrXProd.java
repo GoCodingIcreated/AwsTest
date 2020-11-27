@@ -2,7 +2,11 @@ package gbc.aws.kinesis.schemas;
 
 import java.io.Serializable;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class TurnXAgrXProd extends TurnXAgr implements Serializable {
+	private static final Logger log = LoggerFactory.getLogger(TurnXAgrXProd.class);
 	private static final long serialVersionUID = 1L;
 	protected String productNm;
 
@@ -28,6 +32,20 @@ public class TurnXAgrXProd extends TurnXAgr implements Serializable {
 		this.productNm = productNm;
 	}
 
+	public TurnXAgrXProd(String str) {
+		this(str, ";");
+	}
+
+	public TurnXAgrXProd(String str, String cep) {
+		super(str, cep);
+		String arr[] = str.split(cep);
+		try {
+			this.productNm = arr[13];
+		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
+			log.warn("Not all fields was initialized: " + str);
+		}
+	}
+
 	public String getProductNm() {
 		return productNm;
 	}
@@ -38,7 +56,7 @@ public class TurnXAgrXProd extends TurnXAgr implements Serializable {
 
 	@Override
 	public String toString() {
-		return super.toString() + ", productNm: " + productNm;
+		return super.toString() + ";" + productNm;
 	}
 
 }

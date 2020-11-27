@@ -2,7 +2,11 @@ package gbc.aws.kinesis.schemas;
 
 import java.io.Serializable;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Transaction  implements Serializable {
+	private static Logger log = LoggerFactory.getLogger(Transaction.class);
 	private static final long serialVersionUID = 1L;
 	protected Integer transactionId;
 	protected Integer clearingId;
@@ -128,6 +132,32 @@ public class Transaction  implements Serializable {
 		this.transactionAmt = clr.clearingAmt;
 	}
 
+	public Transaction(String str, String cep) {
+		String arr[] = str.split(cep);
+		try {
+			this.transactionId = Integer.valueOf(arr[0]);
+			this.clearingId = Integer.valueOf(arr[1]);
+			this.clearingTypeId = Integer.valueOf(arr[2]);	
+			this.authorizationId = Integer.valueOf(arr[3]);		
+			this.clearingAmt = Double.valueOf(arr[4]);		
+			this.cardId = Integer.valueOf(arr[5]);
+			this.clearingDttm = arr[6];
+			this.clearingTypeNm = arr[7];
+			this.authorizationTypeId = Integer.valueOf(arr[8]);
+			this.authorizationAmt = Double.valueOf(arr[9]);
+			this.authorizationDttm = arr[10];
+			this.authorizationTypeNm = arr[11];
+			this.transactionAmt = Double.valueOf(arr[12]);
+		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
+			log.warn("Not all fields was initialized: " + str);
+		}
+		
+	}
+	
+	public Transaction(String str) {
+		this(str, ";");
+	}
+	
 	public Integer getTransactionId() {
 		return transactionId;
 	}
@@ -234,12 +264,9 @@ public class Transaction  implements Serializable {
 
 	@Override
 	public String toString() {
-		return "transactionId: " + transactionId + ", clearingId: " + clearingId + ", clearingTypeId: " + clearingTypeId
-				+ ", authorizationId: " + authorizationId + ", clearingAmt: " + clearingAmt + ", cardId: " + cardId
-				+ ", clearingDttm: " + clearingDttm + ", clearingTypeNm: " + clearingTypeNm + ", authorizationTypeId: "
-				+ authorizationTypeId + ", authorizationAmt: " + authorizationAmt + ", authorizationDttm: "
-				+ authorizationDttm + ", authorizationTypeNm: " + authorizationTypeNm + ", transactionAmt: "
-				+ transactionAmt;
+		return transactionId + ";" + clearingId + ";" + clearingTypeId + ";" + authorizationId + ";" + clearingAmt + ";"
+				+ cardId + ";" + clearingDttm + ";" + clearingTypeNm + ";" + authorizationTypeId + ";"
+				+ authorizationAmt + ";" + authorizationDttm + ";" + authorizationTypeNm + ";" + transactionAmt;
 	}
 
 }

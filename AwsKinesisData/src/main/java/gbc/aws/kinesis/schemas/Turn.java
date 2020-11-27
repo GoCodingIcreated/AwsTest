@@ -54,6 +54,28 @@ public class Turn implements Serializable {
 		this.monthDt = turn.monthDt;
 	}
 
+	
+	
+	public Turn(String str, String cep) {
+		String arr[] = str.split(cep);
+		try {
+			this.cardNumber = arr[0];
+			this.cardId = Integer.valueOf(arr[1]);
+			this.agreementId = Integer.valueOf(arr[2]);
+			this.cardStartDt = arr[3];
+			this.cardfinishDt = arr[4];
+			this.turnAmt = Double.valueOf(arr[5]);
+			this.monthDt = arr[6];
+		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
+			log.warn("Not all fields was initialized: " + str);
+		}
+	}
+	
+	public Turn(String str) {
+		this(str, ";");
+	}
+
+
 	public Turn(Turn turn, TransactionXCard trn) {
 		this(turn);
 		this.turnAmt += trn.transactionAmt;
@@ -117,7 +139,7 @@ public class Turn implements Serializable {
 
 	@Override
 	public String toString() {
-		return "cardNumber: " + cardNumber + ", cardId: " + cardId + ", agreementId: " + agreementId + ", cardStartDt: "
-				+ cardStartDt + ", cardfinishDt: " + cardfinishDt + ", turnAmt: " + turnAmt + ", monthDt: " + monthDt;
+		return cardNumber + ";" + cardId + ";" + agreementId + ";" + cardStartDt + ";" + cardfinishDt + ";" + turnAmt
+				+ ";" + monthDt;
 	}
 }

@@ -64,7 +64,7 @@ public class AuthorizationXType extends Authorization implements Serializable {
 	
 	@Override
 	public String toString() {
-		return super.toString() + ", authorizationTypeNm: " + authorizationTypeNm;
+		return super.toString() + ";" + authorizationTypeNm;
 	}
 
 	@Override

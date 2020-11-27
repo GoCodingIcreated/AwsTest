@@ -2,7 +2,12 @@ package gbc.aws.kinesis.schemas;
 
 import java.io.Serializable;
 
-public class TransactionXCard extends Transaction implements Serializable {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class TransactionXCard extends Transaction implements Serializable {	
+	private static final Logger log = LoggerFactory.getLogger(TransactionXCard.class);
+	
 	private static final long serialVersionUID = 1L;
 	protected Integer agreementId;
 	protected String startDt;
@@ -42,6 +47,23 @@ public class TransactionXCard extends Transaction implements Serializable {
 		this.cardNumber = card.cardNumber;
 	}
 
+	public TransactionXCard(String str) {
+		this(str, ";");
+	}
+	
+	public TransactionXCard(String str, String cep) {
+		super(str, cep);
+		String arr[] = str.split(cep);
+		try {
+			this.agreementId = Integer.valueOf(arr[13]);
+			this.startDt = arr[14];
+			this.finishDt = arr[15];
+			this.cardNumber = arr[16];
+		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
+			log.warn("Not all fields was initialized: " + str);
+		}
+	}
+	
 	public TransactionXCard(TransactionXCard trn) {
 		super(trn);
 		this.agreementId = trn.agreementId;
@@ -84,8 +106,7 @@ public class TransactionXCard extends Transaction implements Serializable {
 
 	@Override
 	public String toString() {
-		return super.toString() + ", agreementId: " + agreementId + ", startDt: " + startDt + ", finishDt: " + finishDt
-				+ ", cardNumber: " + cardNumber;
+		return super.toString() + ";" + agreementId + ";" + startDt + ";" + finishDt + ";" + cardNumber;
 	}
 
 }
