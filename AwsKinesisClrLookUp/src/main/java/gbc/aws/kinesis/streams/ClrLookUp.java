@@ -24,7 +24,7 @@ import gbc.aws.kinesis.schemas.ClearingXType;
 
 public class ClrLookUp {
 	private static final String region = "us-east-1";
-	private static final String inputStreamName = "test_in_clr_ss";
+	private static final String inputStreamName = "CLEARING";
 	private static final String outputStreamName = "CLR_X_TYPE";
 
 	private static final Logger log = LoggerFactory.getLogger(ClrLookUp.class);

@@ -28,7 +28,7 @@ import gbc.aws.kinesis.schemas.AwsKinesisData;
 
 public class AuthLookUp {
 	private static final String region = "us-east-1";
-	private static final String inputStreamName = "test_in_auth_ss";
+	private static final String inputStreamName = "AUTHORIZATION";
 	private static final String outputStreamName = "AUTH_X_TYPE";
 
 	private static final List<String> allowedAuthType = new ArrayList<>(
