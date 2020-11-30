@@ -6,7 +6,7 @@
 
     <groupId>gbc</groupId>
     <artifactId>aws-kinesis-clr-look-up</artifactId>
-    <version>1.0.3</version>
+    <version>1.0.4</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -52,7 +52,12 @@
             <artifactId>aws-kinesisanalytics-flink</artifactId>
             <version>${kda.version}</version>
         </dependency>
-
+        <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-dynamodb -->
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk-dynamodb</artifactId>
+			<version>1.11.896</version>
+		</dependency>
         <dependency>
 		    <groupId>com.amazonaws</groupId>
 		    <artifactId>aws-java-sdk-logs</artifactId>
@@ -62,6 +67,11 @@
 			<groupId>gbc</groupId>
 			<artifactId>aws-kinesis-data</artifactId>
 			<version>1.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.11</version>
 		</dependency>
     </dependencies>
 	

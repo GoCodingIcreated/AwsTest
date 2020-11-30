@@ -74,6 +74,6 @@ public class ClrLookUp {
 		});
 
 		clr.addSink(createSinkFromStaticConfig());
-		env.execute("ClrLookUp v.1.0.3.");
+		env.execute("ClrLookUp v.1.0.4.");
 	}
 }
