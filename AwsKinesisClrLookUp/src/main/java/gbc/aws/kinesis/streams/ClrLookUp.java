@@ -2,6 +2,7 @@ package gbc.aws.kinesis.streams;
 
 import java.util.Properties;
 
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -61,19 +62,26 @@ public class ClrLookUp {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
 		DataStream<String> input = createSourceFromStaticConfig(env);
-		DataStream<String> clr = input.map((value) -> {
-			Clearing clrRec = new Clearing(value);
-			DynamoDBMapper mapper = new DynamoDBMapper(client);
-			ClearingType clrType = mapper.load(ClearingType.class, clrRec.getclearingTypeId());
-			ClearingXType clrWithType = new ClearingXType(clrRec, clrType.getClearingTypeNm());
+		DataStream<String> clr = input.map(new MapFunction<String, String>() {
+			private static final long serialVersionUID = 1L;
 
-			log.info("Map 1: Value: " + value + ", clrRec: " + clrRec + ", clrType: " + clrType + ", clrWithType: "
-					+ clrWithType);
+			@Override
+			public String map(String value) throws Exception {
+				Clearing clrRec = new Clearing(value);
+				DynamoDBMapper mapper = new DynamoDBMapper(client);
+				ClearingType clrType = mapper.load(ClearingType.class, clrRec.getclearingTypeId());
+				ClearingXType clrWithType = new ClearingXType(clrRec, clrType.getClearingTypeNm());
 
-			return clrWithType.toString();
+				log.info("Map 1: Value: " + value + ", clrRec: " + clrRec + ", clrType: " + clrType + ", clrWithType: "
+						+ clrWithType);
+
+				return clrWithType.toString();				
+			};
 		});
+				
+				
 
 		clr.addSink(createSinkFromStaticConfig());
-		env.execute("ClrLookUp v.1.0.4.");
+		env.execute("ClrLookUp v.1.0.5.");
 	}
 }
