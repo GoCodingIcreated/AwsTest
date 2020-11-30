@@ -80,7 +80,7 @@ public class AuthLookUp {
 
 				if (true || allowedAuthType.contains(authWithType.getAuthorizationTypeNm())) {
 					log.info("Map 1: Collected value: " + value + ", authRec: " + authRec + ", authType: " + authType
-							+ ", authWithType: " + authWithType);
+							+ ", authWithType: " + authWithType + ", AuthorizationTypeNm: " + authWithType.getAuthorizationTypeNm());
 					out.collect(authWithType.toString());
 				} else {
 					log.info("Map 1: Not collected value: " + value + ", authRec: " + authRec + ", authType: "
@@ -91,6 +91,6 @@ public class AuthLookUp {
 
 		auth.addSink(createSinkFromStaticConfig());
 
-		env.execute("AuthLookUp v.1.11");
+		env.execute("AuthLookUp v.1.13");
 	}
 }

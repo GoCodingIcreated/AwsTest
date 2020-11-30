@@ -61,7 +61,7 @@ public class ClearingXType extends Clearing  implements Serializable {
 
 	@Override
 	public String toString() {
-		return super.toString() + ";" + clearingTypeNm + "\n";
+		return super.toString().replace("\n", "") + ";" + clearingTypeNm + "\n";
 	}
 
 

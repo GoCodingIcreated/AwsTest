@@ -27,7 +27,7 @@ public class ClearingType implements Serializable {
 		this.clearingTypeId = clrType.clearingTypeId;
 		this.clearingTypeNm = clrType.clearingTypeNm;
 	}
-
+	
 	@DynamoDBAttribute(attributeName = "CLEARING_TYPE_NM")
 	public String getClearingTypeNm() {
 		return clearingTypeNm;

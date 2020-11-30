@@ -6,7 +6,7 @@
 
 	<groupId>gbc</groupId>
 	<artifactId>aws-kinesis-auth-look-up</artifactId>
-	<version>1.11</version>
+	<version>1.13</version>
 	<packaging>jar</packaging>
 
 	<properties>

@@ -99,7 +99,7 @@ public class BucketXCustomer extends Bucket {
 
 	@Override
 	public String toString() {
-		return super.toString() + ";" + lastName + ";" + firstName + ";" + middleName + ";" + birthDt + "\n";
+		return super.toString().replace("\n", "") + ";" + lastName + ";" + firstName + ";" + middleName + ";" + birthDt + "\n";
 	}
 
 }
