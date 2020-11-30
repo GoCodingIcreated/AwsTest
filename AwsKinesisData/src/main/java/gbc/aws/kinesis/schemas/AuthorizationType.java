@@ -49,7 +49,7 @@ public class AuthorizationType implements Serializable {
 
 	@Override
 	public String toString() {
-		return "authorizationTypeId: " + authorizationTypeId + ", authorizationTypeNm: " + authorizationTypeNm;
+		return "authorizationTypeId: " + authorizationTypeId + ", authorizationTypeNm: " + authorizationTypeNm + "\n";
 	}
 
 }

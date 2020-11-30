@@ -56,7 +56,7 @@ public class TurnXAgrXProd extends TurnXAgr implements Serializable {
 
 	@Override
 	public String toString() {
-		return super.toString() + ";" + productNm;
+		return super.toString() + ";" + productNm + "\n";
 	}
 
 }

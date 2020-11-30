@@ -111,7 +111,7 @@ public class Agreement implements Serializable {
 	public String toString() {
 		return "agreementId: " + agreementId + ", customerId: " + customerId + ", productId: " + productId
 				+ ", agreementNumber: " + agreementNumber + ", startDt: " + startDt + ", plannedFinishDt: "
-				+ plannedFinishDt + ", factFinishDt: " + factFinishDt;
+				+ plannedFinishDt + ", factFinishDt: " + factFinishDt + "\n";
 	}
 
 }

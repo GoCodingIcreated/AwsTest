@@ -81,7 +81,7 @@ public class Bucket implements Serializable {
 
 	@Override
 	public String toString() {
-		return customerId + ";" + monthDt + ";" + customerTurnAmt;
+		return customerId + ";" + monthDt + ";" + customerTurnAmt + "\n";
 	}
 
 }

@@ -130,7 +130,7 @@ public class TurnXAgr extends Turn implements Serializable {
 	@Override
 	public String toString() {
 		return super.toString() + ";" + customerId + ";" + productId + ";" + agreementNumber + ";" + agrStartDt + ";"
-				+ plannedFinishDt + ";" + factFinishDt;
+				+ plannedFinishDt + ";" + factFinishDt + "\n";
 	}
 
 }

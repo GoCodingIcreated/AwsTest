@@ -96,7 +96,7 @@ public class Authorization implements Serializable {
 	@Override
 	public String toString() {
 		return authorizationId + ";" + authorizationTypeId + ";" + authorizationAmt + ";" + cardId + ";"
-				+ authorizationDttm;
+				+ authorizationDttm + "\n";
 	}
 
 }

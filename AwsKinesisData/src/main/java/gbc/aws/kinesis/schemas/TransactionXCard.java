@@ -106,7 +106,7 @@ public class TransactionXCard extends Transaction implements Serializable {
 
 	@Override
 	public String toString() {
-		return super.toString() + ";" + agreementId + ";" + startDt + ";" + finishDt + ";" + cardNumber;
+		return super.toString() + ";" + agreementId + ";" + startDt + ";" + finishDt + ";" + cardNumber + "\n";
 	}
 
 }

@@ -266,7 +266,7 @@ public class Transaction  implements Serializable {
 	public String toString() {
 		return transactionId + ";" + clearingId + ";" + clearingTypeId + ";" + authorizationId + ";" + clearingAmt + ";"
 				+ cardId + ";" + clearingDttm + ";" + clearingTypeNm + ";" + authorizationTypeId + ";"
-				+ authorizationAmt + ";" + authorizationDttm + ";" + authorizationTypeNm + ";" + transactionAmt;
+				+ authorizationAmt + ";" + authorizationDttm + ";" + authorizationTypeNm + ";" + transactionAmt + "\n";
 	}
 
 }

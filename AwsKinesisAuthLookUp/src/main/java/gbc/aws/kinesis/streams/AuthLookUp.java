@@ -78,7 +78,7 @@ public class AuthLookUp {
 				AuthorizationType authType = mapper.load(AuthorizationType.class, authRec.getAuthorizationTypeId());
 				AuthorizationXType authWithType = new AuthorizationXType(authRec, authType.getAuthorizationTypeNm());
 
-				if (allowedAuthType.contains(authWithType.getAuthorizationTypeNm())) {
+				if (true || allowedAuthType.contains(authWithType.getAuthorizationTypeNm())) {
 					log.info("Map 1: Collected value: " + value + ", authRec: " + authRec + ", authType: " + authType
 							+ ", authWithType: " + authWithType);
 					out.collect(authWithType.toString());

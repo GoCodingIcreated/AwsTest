@@ -140,6 +140,6 @@ public class Turn implements Serializable {
 	@Override
 	public String toString() {
 		return cardNumber + ";" + cardId + ";" + agreementId + ";" + cardStartDt + ";" + cardfinishDt + ";" + turnAmt
-				+ ";" + monthDt;
+				+ ";" + monthDt + "\n";
 	}
 }

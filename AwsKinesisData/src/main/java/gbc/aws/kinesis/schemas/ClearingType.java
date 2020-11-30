@@ -48,7 +48,7 @@ public class ClearingType implements Serializable {
 
 	@Override
 	public String toString() {
-		return "clearingTypeId: " + clearingTypeId + ", clearingTypeNm: " + clearingTypeNm;
+		return "clearingTypeId: " + clearingTypeId + ", clearingTypeNm: " + clearingTypeNm + "\n";
 	}
 
 }
