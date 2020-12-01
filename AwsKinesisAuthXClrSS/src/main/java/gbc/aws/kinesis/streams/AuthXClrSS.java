@@ -79,12 +79,12 @@ public class AuthXClrSS {
 		auth_x_type.connect(clr_x_type)
 			.keyBy((value) -> {
 				AuthorizationXType auth = new AuthorizationXType(value);
-				log.info("Got key value: " + auth.getAuthorizationId());
+				log.info("Got auth key value: " + auth.getAuthorizationId());
 				return auth.getAuthorizationId();
 			},
 			(value) -> {
 				ClearingXType clr = new ClearingXType(value);
-				log.info("Got key value: " + clr.getClearingId());
+				log.info("Got clearing key value: " + clr.getClearingId());
 				return clr.getClearingId();
 			}).process(new PseudoWindow(Time.minutes(60)))
 			.addSink(createSinkFromStaticConfig());
@@ -133,7 +133,7 @@ public class AuthXClrSS {
 				String rec = clrState.get(stateKey);
 				if (rec == null) {
 					authState.put(stateKey, record);
-					tran = new Transaction(new AuthorizationXType(rec), new ClearingXType());
+					tran = new Transaction(new AuthorizationXType(record), new ClearingXType());
 				} else {		
 					tran = new Transaction(new AuthorizationXType(record), new ClearingXType(rec));
 				}
@@ -165,7 +165,7 @@ public class AuthXClrSS {
 				String rec = authState.get(stateKey);
 				if (rec == null) {
 					clrState.put(stateKey, record);
-					tran = new Transaction(new AuthorizationXType(), new ClearingXType(rec));
+					tran = new Transaction(new AuthorizationXType(), new ClearingXType(record));
 				} else {		
 					tran = new Transaction(new AuthorizationXType(rec), new ClearingXType(record));
 				}
