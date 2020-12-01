@@ -2,17 +2,19 @@ package gbc.aws.kinesis.streams;
 
 import java.util.Properties;
 
-import org.apache.flink.api.common.functions.JoinFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
-import org.apache.flink.api.java.functions.KeySelector;
-import org.apache.flink.streaming.api.TimeCharacteristic;
+import org.apache.flink.api.common.state.MapState;
+import org.apache.flink.api.common.state.MapStateDescriptor;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.streaming.api.TimerService;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
+import org.apache.flink.streaming.api.functions.co.CoProcessFunction;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisConsumer;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisProducer;
 import org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConstants;
+import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,47 +71,123 @@ public class AuthXClrSS {
 	}
 
 	public static void main(String[] args) throws Exception {
-
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-		env.setStreamTimeCharacteristic(TimeCharacteristic.IngestionTime);
 
-		DataStream<String> auth = createSource1FromStaticConfig(env);
+		DataStream<String> auth_x_type = createSource1FromStaticConfig(env);
+		DataStream<String> clr_x_type = createSource2FromStaticConfig(env);
 
-		DataStream<String> clr = createSource2FromStaticConfig(env);
+		auth_x_type.connect(clr_x_type)
+			.keyBy((value) -> {
+				AuthorizationXType auth = new AuthorizationXType(value);
+				log.info("Got key value: " + auth.getAuthorizationId());
+				return auth.getAuthorizationId();
+			},
+			(value) -> {
+				ClearingXType clr = new ClearingXType(value);
+				log.info("Got key value: " + clr.getClearingId());
+				return clr.getClearingId();
+			}).process(new PseudoWindow(Time.minutes(60)))
+			.addSink(createSinkFromStaticConfig());
 
-		auth.join(clr).where(new KeySelector<String, Integer>() {
-
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public Integer getKey(String value) {
-				Integer key = new AuthorizationXType(value).getAuthorizationId();
-				log.info("AuthXClrSS getKeyAuth value: " + value + ", key: " + key);
-				return key;
-			}
-		}).equalTo(new KeySelector<String, Integer>() {
-
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public Integer getKey(String value) {		
-				Integer key = new ClearingXType(value).getAuthorizationId();
-				log.info("AuthXClrSS getKeyClr value: " + value + ", key: " + key);
-				return key;				
-			}
-		}).window(TumblingEventTimeWindows.of(Time.minutes(60)))
-				.apply(new JoinFunction<String, String, String>() {
-
-					private static final long serialVersionUID = 1L;
-
-					@Override
-					public String join(String auth, String clr) {
-						Transaction trans = new Transaction(new AuthorizationXType(auth), new ClearingXType(clr));
-						log.info("AuthXClrSS transaction: " + trans + ", auth: " + auth + ", clr: " + clr);
-						return trans.toString();
-					}
-				}).addSink(createSinkFromStaticConfig());
-
-		env.execute("AuthXClrSS v1.0.2");
+		env.execute("AWS SSJoin v1.0.3");
 	}
+
+	public static class PseudoWindow extends CoProcessFunction<String, String, String> {
+
+		private static final long serialVersionUID = 1L;
+		private final long durationMsec;
+		private Transaction tran;
+		
+		public PseudoWindow(Time duration) {
+			this.durationMsec = duration.toMilliseconds();
+		}
+
+		private transient MapState<Integer, String> authState;
+		private transient MapState<Integer, String> clrState;
+
+		@Override
+		public void open(Configuration conf) {
+			MapStateDescriptor<Integer, String> authState1 = new MapStateDescriptor<>("authState", Integer.class,
+					String.class);
+			MapStateDescriptor<Integer, String> clrState1 = new MapStateDescriptor<>("clrState", Integer.class,
+					String.class);
+			authState = getRuntimeContext().getMapState(authState1);
+			clrState = getRuntimeContext().getMapState(clrState1);
+		}
+		
+		@Override
+		public void processElement1(String record, Context ctx, Collector<String> out) throws Exception {
+			AuthorizationXType auth = new AuthorizationXType(record);
+			long eventTime = System.currentTimeMillis();
+			TimerService timerService = ctx.timerService();
+
+			if (eventTime <= timerService.currentWatermark()) {
+				// 11
+			} else {
+
+				long endOfWindow = (eventTime - (eventTime % durationMsec) + durationMsec - 1);
+
+				timerService.registerProcessingTimeTimer(endOfWindow);
+
+				Integer stateKey = auth.getAuthorizationId();
+				String rec = clrState.get(stateKey);
+				if (rec == null) {
+					authState.put(stateKey, record);
+					tran = new Transaction(new AuthorizationXType(rec), new ClearingXType());
+				} else {		
+					tran = new Transaction(new AuthorizationXType(record), new ClearingXType(rec));
+				}
+				
+				log.info("Got timers: eventTime: " + eventTime + " endOfWindow: " + endOfWindow + " currentWatermark: "
+						+ timerService.currentWatermark());
+				log.info("Got result: " + stateKey + ":" + rec);
+				log.info("Transaction: " + tran);
+
+				out.collect(tran.toString());
+			}
+		}
+		
+		@Override
+		public void processElement2(String record, Context ctx, Collector<String> out) throws Exception {
+			ClearingXType clr = new ClearingXType(record);
+			long eventTime = System.currentTimeMillis();
+			TimerService timerService = ctx.timerService();
+
+			if (eventTime <= timerService.currentWatermark()) {
+				// 11
+			} else {
+
+				long endOfWindow = (eventTime - (eventTime % durationMsec) + durationMsec - 1);
+
+				timerService.registerProcessingTimeTimer(endOfWindow);
+
+				Integer stateKey = clr.getAuthorizationId();
+				String rec = authState.get(stateKey);
+				if (rec == null) {
+					clrState.put(stateKey, record);
+					tran = new Transaction(new AuthorizationXType(), new ClearingXType(rec));
+				} else {		
+					tran = new Transaction(new AuthorizationXType(rec), new ClearingXType(record));
+				}
+				
+				log.info("Got timers: eventTime: " + eventTime + " endOfWindow: " + endOfWindow + " currentWatermark: "
+						+ timerService.currentWatermark());
+				log.info("Got result: " + stateKey + ":" + rec);
+				log.info("Transaction: " + tran);
+
+				out.collect(tran.toString());
+			}
+		}
+
+		@Override
+		public void onTimer(long timestamp, OnTimerContext context, Collector<String> out) throws Exception {
+
+//			String key = context.getCurrentKey();
+			log.info("PseudoWindow timer expired!"); // Key: " + key);
+			this.clrState.clear();
+			this.authState.clear();
+
+		}
+	}
+
 }
