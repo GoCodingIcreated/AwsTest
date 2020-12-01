@@ -30,7 +30,7 @@ public class ClrLookUp {
 
 	private static final Logger log = LoggerFactory.getLogger(ClrLookUp.class);
 
-	private static final AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
+	private static final AmazonDynamoDB client = AmazonDynamoDBClientBuilder.defaultClient();
 
 	private static final String aws_access_key_id = AwsKinesisData.getAwsAccessKeyId();
 	private static final String aws_secret_access_key = AwsKinesisData.getAwsSecretAccessKey();
@@ -69,19 +69,28 @@ public class ClrLookUp {
 			public String map(String value) throws Exception {
 				Clearing clrRec = new Clearing(value);
 				DynamoDBMapper mapper = new DynamoDBMapper(client);
-				ClearingType clrType = mapper.load(ClearingType.class, clrRec.getclearingTypeId());
-				ClearingXType clrWithType = new ClearingXType(clrRec, clrType.getClearingTypeNm());
+				try {
+					ClearingType clrType = mapper.load(ClearingType.class, clrRec.getclearingTypeId());
+					ClearingXType clrWithType = new ClearingXType(clrRec, clrType.getClearingTypeNm());
+					log.info("Map 1: Value: " + value + ", clrRec: " + clrRec + ", clrType: " + clrType + ", clrWithType: "
+							+ clrWithType);
+					return clrWithType.toString();
+				}
+				catch (Exception ex) {
+					ClearingXType clrWithType = new ClearingXType(clrRec, ""); 
+					log.error("Map 1: Value: " + value + ", clrRec: " + clrRec + ", clrType: null, clrWithType: "
+							+ clrWithType);
+					return clrWithType.toString();
+				}
+				
 
-				log.info("Map 1: Value: " + value + ", clrRec: " + clrRec + ", clrType: " + clrType + ", clrWithType: "
-						+ clrWithType);
-
-				return clrWithType.toString();				
+								
 			};
 		});
 				
 				
 
 		clr.addSink(createSinkFromStaticConfig());
-		env.execute("ClrLookUp v.1.0.5.");
+		env.execute("ClrLookUp v.1.0.8.");
 	}
 }

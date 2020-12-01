@@ -53,7 +53,7 @@ public class TransactionXCard extends Transaction implements Serializable {
 	
 	public TransactionXCard(String str, String cep) {
 		super(str, cep);
-		String arr[] = str.split(cep);
+		String arr[] = str.replace("\n", "").split(cep);
 		try {
 			this.agreementId = Integer.valueOf(arr[13]);
 			this.startDt = arr[14];

@@ -23,7 +23,7 @@ public class ClearingXType extends Clearing  implements Serializable {
 
 	public ClearingXType(String str, String cep) {
 		super(str, cep);
-		String arr[] = str.split(cep);
+		String arr[] = str.replace("\n", "").split(cep);
 		try {
 			this.clearingTypeNm = arr[6];
 		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {

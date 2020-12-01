@@ -38,7 +38,7 @@ public class TurnXAgrXProd extends TurnXAgr implements Serializable {
 
 	public TurnXAgrXProd(String str, String cep) {
 		super(str, cep);
-		String arr[] = str.split(cep);
+		String arr[] = str.replace("\n", "").split(cep);
 		try {
 			this.productNm = arr[13];
 		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {

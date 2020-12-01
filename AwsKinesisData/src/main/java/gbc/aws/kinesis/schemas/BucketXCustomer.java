@@ -50,7 +50,7 @@ public class BucketXCustomer extends Bucket {
 
 	public BucketXCustomer(String str, String cep) {
 		super(str, cep);
-		String arr[] = str.split(cep);
+		String arr[] = str.replace("\n", "").split(cep);
 		try {
 			this.lastName = arr[3];
 			this.firstName = arr[4];

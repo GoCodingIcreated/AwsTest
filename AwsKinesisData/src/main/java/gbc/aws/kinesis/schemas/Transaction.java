@@ -133,7 +133,7 @@ public class Transaction  implements Serializable {
 	}
 
 	public Transaction(String str, String cep) {
-		String arr[] = str.split(cep);
+		String arr[] = str.replace("\n", "").split(cep);
 		try {
 			this.transactionId = Integer.valueOf(arr[0]);
 			this.clearingId = Integer.valueOf(arr[1]);

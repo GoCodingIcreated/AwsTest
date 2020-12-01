@@ -20,11 +20,11 @@ public class Clearing implements Serializable {
 	}
 
 	public Clearing(String str) {
-		super();
+		this(str, ";");
 	}
 
 	public Clearing(String str, String cep) {
-		String arr[] = str.split(cep);
+		String arr[] = str.replace("\n", "").split(cep);
 		try {
 			this.clearingId = Integer.valueOf(arr[0]);
 			this.clearingTypeId = Integer.valueOf(arr[1]);

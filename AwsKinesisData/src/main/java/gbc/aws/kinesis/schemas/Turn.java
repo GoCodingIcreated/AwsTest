@@ -57,7 +57,7 @@ public class Turn implements Serializable {
 	
 	
 	public Turn(String str, String cep) {
-		String arr[] = str.split(cep);
+		String arr[] = str.replace("\n", "").split(cep);
 		try {
 			this.cardNumber = arr[0];
 			this.cardId = Integer.valueOf(arr[1]);

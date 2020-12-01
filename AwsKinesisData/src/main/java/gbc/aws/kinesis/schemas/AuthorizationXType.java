@@ -33,7 +33,7 @@ public class AuthorizationXType extends Authorization implements Serializable {
 
 	public AuthorizationXType(String str, String cep) {
 		super(str, cep);
-		String arr[] = str.split(cep);
+		String arr[] = str.replace("\n", "").split(cep);
 		try {
 			this.authorizationTypeNm = arr[5];
 		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {

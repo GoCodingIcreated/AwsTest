@@ -71,7 +71,7 @@ public class Authorization implements Serializable {
 	}
 
 	public Authorization(String str, String cep) {
-		String arr[] = str.split(cep);
+		String arr[] = str.replace("\n", "").split(cep);
 		try {
 			this.authorizationId = Integer.valueOf(arr[0]);
 			this.authorizationTypeId = Integer.valueOf(arr[1]);

@@ -29,7 +29,7 @@ public class Bucket implements Serializable {
 	}
 
 	public Bucket(String str, String cep) {
-		String arr[] = str.split(cep);
+		String arr[] = str.replace("\n", "").split(cep);
 		try {
 			this.customerId = Integer.valueOf(arr[0]);
 			this.monthDt = arr[1];

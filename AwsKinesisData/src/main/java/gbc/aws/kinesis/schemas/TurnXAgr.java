@@ -70,7 +70,7 @@ public class TurnXAgr extends Turn implements Serializable {
 
 	public TurnXAgr(String str, String cep) {
 		super(str, cep);
-		String arr[] = str.split(cep);
+		String arr[] = str.replace("\n", "").split(cep);
 		try {
 			this.customerId = Integer.valueOf(arr[7]);
 			this.productId = Integer.valueOf(arr[8]);
