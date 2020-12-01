@@ -82,16 +82,20 @@ public class AuthXClrSS {
 			private static final long serialVersionUID = 1L;
 
 			@Override
-			public Integer getKey(String value) {				
-				return new AuthorizationXType(value).getAuthorizationId();
+			public Integer getKey(String value) {
+				Integer key = new AuthorizationXType(value).getAuthorizationId();
+				log.info("AuthXClrSS getKeyAuth value: " + value + ", key: " + key);
+				return key;
 			}
 		}).equalTo(new KeySelector<String, Integer>() {
 
 			private static final long serialVersionUID = 1L;
 
 			@Override
-			public Integer getKey(String value) {				
-				return new ClearingXType(value).getAuthorizationId();
+			public Integer getKey(String value) {		
+				Integer key = new ClearingXType(value).getAuthorizationId();
+				log.info("AuthXClrSS getKeyClr value: " + value + ", key: " + key);
+				return key;				
 			}
 		}).window(TumblingEventTimeWindows.of(Time.minutes(60)))
 				.apply(new JoinFunction<String, String, String>() {
@@ -101,11 +105,11 @@ public class AuthXClrSS {
 					@Override
 					public String join(String auth, String clr) {
 						Transaction trans = new Transaction(new AuthorizationXType(auth), new ClearingXType(clr));
-						log.info("AuthXClrSS transaction: " + trans);
+						log.info("AuthXClrSS transaction: " + trans + ", auth: " + auth + ", clr: " + clr);
 						return trans.toString();
 					}
 				}).addSink(createSinkFromStaticConfig());
 
-		env.execute("AuthXClrSS v1.0.1");
+		env.execute("AuthXClrSS v1.0.2");
 	}
 }
