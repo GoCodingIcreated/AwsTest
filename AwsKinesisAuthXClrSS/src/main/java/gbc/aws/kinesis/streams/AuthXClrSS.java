@@ -28,7 +28,7 @@ public class AuthXClrSS {
 	private static final String region = "us-east-1";
 	private static final String inputStreamName1 = "AUTH_X_TYPE";
 	private static final String inputStreamName2 = "CLR_X_TYPE";
-	private static final String outputStreamName = "TRANSACTIONS";
+	private static final String outputStreamName = "TRANSACTION";
 	private static final String aws_access_key_id = AwsKinesisData.getAwsAccessKeyId();
 	private static final String aws_secret_access_key = AwsKinesisData.getAwsSecretAccessKey();
 

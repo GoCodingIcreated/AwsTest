@@ -23,7 +23,7 @@ import gbc.aws.kinesis.schemas.TransactionXCard;
 
 public class TrnLookUp {
 	private static final String region = "us-east-1";
-	private static final String inputStreamName = "TRANSACTIONS";
+	private static final String inputStreamName = "TRANSACTION";
 	private static final String outputStreamName = "TRN_X_CARD";
 
 	private static final Logger log = LoggerFactory.getLogger(TrnLookUp.class);
