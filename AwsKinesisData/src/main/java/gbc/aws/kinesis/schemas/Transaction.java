@@ -135,19 +135,46 @@ public class Transaction  implements Serializable {
 	public Transaction(String str, String cep) {
 		String arr[] = str.replace("\n", "").split(cep);
 		try {
-			this.transactionId = Integer.valueOf(arr[0]);
-			this.clearingId = Integer.valueOf(arr[1]);
-			this.clearingTypeId = Integer.valueOf(arr[2]);	
-			this.authorizationId = Integer.valueOf(arr[3]);		
-			this.clearingAmt = Double.valueOf(arr[4]);		
-			this.cardId = Integer.valueOf(arr[5]);
-			this.clearingDttm = arr[6];
-			this.clearingTypeNm = arr[7];
-			this.authorizationTypeId = Integer.valueOf(arr[8]);
-			this.authorizationAmt = Double.valueOf(arr[9]);
-			this.authorizationDttm = arr[10];
-			this.authorizationTypeNm = arr[11];
-			this.transactionAmt = Double.valueOf(arr[12]);
+			if (!arr[0].equals("null")) {
+				this.transactionId = Integer.valueOf(arr[0]);
+			}
+			if (!arr[1].equals("null")) {
+				this.clearingId = Integer.valueOf(arr[1]);
+			}
+			if (!arr[2].equals("null")) {
+				this.clearingTypeId = Integer.valueOf(arr[2]);	
+			}
+			if (!arr[3].equals("null")) {
+				this.authorizationId = Integer.valueOf(arr[3]);	
+			}
+			if (!arr[4].equals("null")) {
+				this.clearingAmt = Double.valueOf(arr[4]);
+			}
+			if (!arr[5].equals("null")) {
+				this.cardId = Integer.valueOf(arr[5]);
+			}
+			if (!arr[6].equals("null")) {
+				this.clearingDttm = arr[6];
+			}
+			if (!arr[7].equals("null")) {
+				this.clearingTypeNm = arr[7];	
+			}
+			if (!arr[8].equals("null")) {
+				this.authorizationTypeId = Integer.valueOf(arr[8]);
+			}
+			if (!arr[9].equals("null")) {
+				this.authorizationAmt = Double.valueOf(arr[9]);
+			}
+			if (!arr[10].equals("null")) {
+				this.authorizationDttm = arr[10];
+			}
+			if (!arr[11].equals("null")) {
+				this.authorizationTypeNm = arr[11];
+			}
+			if (!arr[12].equals("null")) {
+				this.transactionAmt = Double.valueOf(arr[12]);
+			}
+	
 		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
 			log.warn("Not all fields was initialized: " + str);
 		}
