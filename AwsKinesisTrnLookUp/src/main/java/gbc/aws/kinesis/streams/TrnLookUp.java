@@ -2,6 +2,7 @@ package gbc.aws.kinesis.streams;
 
 import java.util.Properties;
 
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -60,20 +61,25 @@ public class TrnLookUp {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
 		DataStream<String> input = createSourceFromStaticConfig(env);
-		DataStream<String> trans = input.map((trnStr) -> {
-			try {
-				DynamoDBMapper mapper = new DynamoDBMapper(client);
-				Transaction trn = new Transaction(trnStr);
-				Card card = mapper.load(Card.class, trn.getCardId());			
-				TransactionXCard trnXCard = new TransactionXCard(trn, card);
-				log.info("Map 1: trans: " + trn + ", card: " + card + ", transXCard: " + trnXCard);
-				return trnXCard.toString();
-			} 
-			catch (Exception ex) {
-				TransactionXCard trnXCard = new TransactionXCard(new Transaction(trnStr), new Card()); 
-				log.error("Map 1: Value: " + trnStr + ", trnXCard: " + trnXCard + ", trn: " + new Transaction(trnStr) + ", card: null");
-				return trnXCard.toString();
-			}
+		DataStream<String> trans = input.map(new MapFunction<String, String>() {
+				private static final long serialVersionUID = 1L;
+
+				@Override
+				public String map(String trnStr) throws Exception {
+					try {
+						DynamoDBMapper mapper = new DynamoDBMapper(client);
+						Transaction trn = new Transaction(trnStr);
+						Card card = mapper.load(Card.class, trn.getCardId());			
+						TransactionXCard trnXCard = new TransactionXCard(trn, card);
+						log.info("Map 1: trans: " + trn + ", card: " + card + ", transXCard: " + trnXCard);
+						return trnXCard.toString();
+					} 
+					catch (Exception ex) {
+						TransactionXCard trnXCard = new TransactionXCard(new Transaction(trnStr), new Card()); 
+						log.error("Map 1: Value: " + trnStr + ", trnXCard: " + trnXCard + ", trn: " + new Transaction(trnStr) + ", card: null");
+						return trnXCard.toString();
+					}
+				}
 		});
 
 		trans.addSink(createSinkFromStaticConfig());
