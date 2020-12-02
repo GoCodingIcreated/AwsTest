@@ -106,6 +106,8 @@ public class TurnAgr {
 				if (sum == null) {
 					sum = 0.0;
 				}
+				log.info("Got: record: " + record + ", sum: " + sum + ", trn.getTransactionAmt: " + trn.getTransactionAmt() + ", trn: " + trn);
+				
 				sum += trn.getTransactionAmt();
 				sumOfTransaction.put(stateKey, sum);
 				Turn result = new Turn(trn, sum, "2020-11-01");

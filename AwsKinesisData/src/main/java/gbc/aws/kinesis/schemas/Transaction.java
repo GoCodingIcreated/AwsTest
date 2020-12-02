@@ -81,7 +81,7 @@ public class Transaction  implements Serializable {
 		this.authorizationAmt = auth.authorizationAmt;
 		this.authorizationDttm = auth.authorizationDttm;
 		this.authorizationTypeNm = auth.authorizationTypeNm;
-		this.transactionAmt = clr.clearingAmt;
+		this.transactionAmt = clr.clearingAmt != null ? clr.clearingAmt : auth.authorizationAmt;
 	}
 
 	public Transaction(Transaction trn) {
@@ -97,7 +97,7 @@ public class Transaction  implements Serializable {
 		this.authorizationAmt = trn.authorizationAmt;
 		this.authorizationDttm = trn.authorizationDttm;
 		this.authorizationTypeNm = trn.authorizationTypeNm;
-		this.transactionAmt = trn.clearingAmt;
+		this.transactionAmt = trn.transactionAmt;
 	}
 
 	public Transaction(Transaction trn, AuthorizationXType auth) {
@@ -113,7 +113,7 @@ public class Transaction  implements Serializable {
 		this.authorizationAmt = auth.authorizationAmt;
 		this.authorizationDttm = auth.authorizationDttm;
 		this.authorizationTypeNm = auth.authorizationTypeNm;
-		this.transactionAmt = trn.clearingAmt;
+		this.transactionAmt = trn.transactionAmt != null ? trn.transactionAmt : auth.authorizationAmt;
 	}
 
 	public Transaction(Transaction trn, ClearingXType clr) {
@@ -129,7 +129,7 @@ public class Transaction  implements Serializable {
 		this.authorizationAmt = trn.authorizationAmt;
 		this.authorizationDttm = trn.authorizationDttm;
 		this.authorizationTypeNm = trn.authorizationTypeNm;
-		this.transactionAmt = clr.clearingAmt;
+		this.transactionAmt = clr.clearingAmt != null ? clr.clearingAmt : trn.transactionAmt;
 	}
 
 	public Transaction(String str, String cep) {
