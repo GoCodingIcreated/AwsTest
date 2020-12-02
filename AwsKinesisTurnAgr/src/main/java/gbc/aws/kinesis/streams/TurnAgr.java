@@ -2,11 +2,9 @@ package gbc.aws.kinesis.streams;
 
 import java.util.Properties;
 
-import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
-import org.apache.flink.api.java.tuple.Tuple8;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.TimerService;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -29,7 +27,7 @@ public class TurnAgr {
 	private static final Logger log = LoggerFactory.getLogger(TurnAgr.class);
 
 	private static final String region = "us-east-1";
-	private static final String inputStreamName = "TRN_X_CARD";
+	private static final String inputStreamName = "TRAN_X_CARD";
 	private static final String outputStreamName = "TURN";
 	private static final String aws_access_key_id = AwsKinesisData.getAwsAccessKeyId();
 	private static final String aws_secret_access_key = AwsKinesisData.getAwsSecretAccessKey();
@@ -68,7 +66,7 @@ public class TurnAgr {
 			return trn.getCardNumber();
 		}).process(new PseudoWindow(Time.days(30))).addSink(createSinkFromStaticConfig());
 
-		env.execute("Flink Streaming Java API Skeleton");
+		env.execute("TurnAgr v 1.0.0.");
 	}
 
 	public static class PseudoWindow extends KeyedProcessFunction<String, String, String> {
@@ -115,12 +113,7 @@ public class TurnAgr {
 						+ timerService.currentWatermark());
 				log.info("Got result: " + stateKey + ":" + sum);
 				log.info("Turn: " + result);
-				/*
-				 * result.setAgreementId(trn.getAgreementId()); //
-				 * result.setCardFinishDt(finishDt);; // result.setCardStartDt(startDt);
-				 * result.setCardId(trn.getCardId()); result.setCardNumber(stateKey); //
-				 * result.setMonthDt(monthDt); result.setTurnAmt(sum);
-				 */
+
 				out.collect(result.toString());
 			}
 		}
@@ -135,20 +128,5 @@ public class TurnAgr {
 		}
 	}
 
-	public static final class serialToTuple implements
-			FlatMapFunction<String, Tuple8<Integer, Integer, Double, Integer, String, String, String, String>> {
 
-		/**
-		 * 
-		 */
-		private static final long serialVersionUID = 1L;
-
-		@Override
-		public void flatMap(String value,
-				Collector<Tuple8<Integer, Integer, Double, Integer, String, String, String, String>> out) {
-			String str[] = value.split(";");
-			out.collect(new Tuple8<>(Integer.parseInt(str[0]), Integer.parseInt(str[1]), Double.parseDouble(str[2]),
-					Integer.parseInt(str[3]), str[4], str[5], str[6], str[7]));
-		}
-	}
 }

@@ -24,7 +24,7 @@ import gbc.aws.kinesis.schemas.TransactionXCard;
 public class TrnLookUp {
 	private static final String region = "us-east-1";
 	private static final String inputStreamName = "TRANSACTION";
-	private static final String outputStreamName = "TRN_X_CARD";
+	private static final String outputStreamName = "TRAN_X_CARD";
 
 	private static final Logger log = LoggerFactory.getLogger(TrnLookUp.class);
 
@@ -61,13 +61,19 @@ public class TrnLookUp {
 
 		DataStream<String> input = createSourceFromStaticConfig(env);
 		DataStream<String> trans = input.map((trnStr) -> {
-			DynamoDBMapper mapper = new DynamoDBMapper(client);
-			Transaction trn = new Transaction(trnStr);
-			Card card = mapper.load(Card.class, trn.getCardId());			
-			TransactionXCard trnXCard = new TransactionXCard(trn, card);
-			log.info("Map 1: trans: " + trn + ", card: " + card + ", transXCard: " + trnXCard);
-			return trnXCard.toString();
-
+			try {
+				DynamoDBMapper mapper = new DynamoDBMapper(client);
+				Transaction trn = new Transaction(trnStr);
+				Card card = mapper.load(Card.class, trn.getCardId());			
+				TransactionXCard trnXCard = new TransactionXCard(trn, card);
+				log.info("Map 1: trans: " + trn + ", card: " + card + ", transXCard: " + trnXCard);
+				return trnXCard.toString();
+			} 
+			catch (Exception ex) {
+				TransactionXCard trnXCard = new TransactionXCard(new Transaction(trnStr), new Card()); 
+				log.error("Map 1: Value: " + trnStr + ", trnXCard: " + trnXCard + ", trn: " + new Transaction(trnStr) + ", card: null");
+				return trnXCard.toString();
+			}
 		});
 
 		trans.addSink(createSinkFromStaticConfig());

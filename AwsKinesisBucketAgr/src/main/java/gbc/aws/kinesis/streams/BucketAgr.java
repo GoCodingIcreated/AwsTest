@@ -18,6 +18,7 @@ import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
 import gbc.aws.kinesis.schemas.AwsKinesisData;
 import gbc.aws.kinesis.schemas.Bucket;
 import gbc.aws.kinesis.schemas.TurnXAgrXProd;
