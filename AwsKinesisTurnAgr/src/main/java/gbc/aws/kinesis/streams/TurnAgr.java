@@ -62,14 +62,14 @@ public class TurnAgr {
 
 		turn.keyBy((value) -> {
 			TransactionXCard trn = new TransactionXCard(value);
-			log.info("Got key value: " + trn.getCardNumber());
-			return trn.getCardNumber();
+			log.info("Got key value: " + trn.getCardId());
+			return trn.getCardId();
 		}).process(new PseudoWindow(Time.days(30))).addSink(createSinkFromStaticConfig());
 
 		env.execute("TurnAgr v 1.0.0.");
 	}
 
-	public static class PseudoWindow extends KeyedProcessFunction<String, String, String> {
+	public static class PseudoWindow extends KeyedProcessFunction<Integer, String, String> {
 
 		private static final long serialVersionUID = 1L;
 		private final long durationMsec;
@@ -78,11 +78,11 @@ public class TurnAgr {
 			this.durationMsec = duration.toMilliseconds();
 		}
 
-		private transient MapState<String, Double> sumOfTransaction;
+		private transient MapState<Integer, Double> sumOfTransaction;
 
 		@Override
 		public void open(Configuration conf) {
-			MapStateDescriptor<String, Double> sumDesc = new MapStateDescriptor<>("sumOfTransaction", String.class,
+			MapStateDescriptor<Integer, Double> sumDesc = new MapStateDescriptor<>("sumOfTransaction", Integer.class,
 					Double.class);
 			sumOfTransaction = getRuntimeContext().getMapState(sumDesc);
 		}
@@ -101,7 +101,7 @@ public class TurnAgr {
 
 				timerService.registerProcessingTimeTimer(endOfWindow);
 
-				String stateKey = trn.getCardNumber();
+				Integer stateKey = trn.getCardId();
 				Double sum = sumOfTransaction.get(stateKey);
 				if (sum == null) {
 					sum = 0.0;
@@ -121,7 +121,7 @@ public class TurnAgr {
 		@Override
 		public void onTimer(long timestamp, OnTimerContext context, Collector<String> out) throws Exception {
 
-			String key = context.getCurrentKey();
+			Integer key = context.getCurrentKey();
 			log.info("PseudoWindow timer expired! Key: " + key);
 			this.sumOfTransaction.clear();
 
