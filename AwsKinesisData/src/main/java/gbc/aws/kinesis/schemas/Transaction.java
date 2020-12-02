@@ -72,7 +72,7 @@ public class Transaction  implements Serializable {
 		this.transactionId = clr.clearingId;
 		this.clearingId = clr.clearingId;
 		this.clearingTypeId = clr.clearingTypeId;	
-		this.authorizationId = auth.authorizationId;		
+		this.authorizationId = clr.authorizationId != null ? clr.authorizationId : auth.authorizationId;		
 		this.clearingAmt = clr.clearingAmt;		
 		this.cardId = clr.cardId != null ? clr.cardId : auth.cardId;
 		this.clearingDttm = clr.clearingDttm;
@@ -104,7 +104,7 @@ public class Transaction  implements Serializable {
 		this.transactionId = trn.clearingId;
 		this.clearingId = trn.clearingId;
 		this.clearingTypeId = trn.clearingTypeId;	
-		this.authorizationId = auth.authorizationId;		
+		this.authorizationId = trn.authorizationId != null ? trn.authorizationId : auth.authorizationId;		
 		this.clearingAmt = trn.clearingAmt;		
 		this.cardId = trn.cardId != null ? trn.cardId : auth.cardId;
 		this.clearingDttm = trn.clearingDttm;
@@ -120,7 +120,7 @@ public class Transaction  implements Serializable {
 		this.transactionId = clr.clearingId;
 		this.clearingId = clr.clearingId;
 		this.clearingTypeId = clr.clearingTypeId;	
-		this.authorizationId = trn.authorizationId;		
+		this.authorizationId = clr.authorizationId != null ? clr.authorizationId : trn.authorizationId;;		
 		this.clearingAmt = clr.clearingAmt;		
 		this.cardId = clr.cardId != null ? clr.cardId : trn.cardId;
 		this.clearingDttm = clr.clearingDttm;
