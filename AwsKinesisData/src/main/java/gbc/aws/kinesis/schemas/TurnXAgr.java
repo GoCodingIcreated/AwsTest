@@ -14,16 +14,12 @@ public class TurnXAgr extends Turn implements Serializable {
 	protected String agrStartDt;
 	protected String plannedFinishDt;
 	protected String factFinishDt;
+	private String processedDttm;
 
 	public TurnXAgr() {
 
 	}
 
-	public TurnXAgr(String cardNumber, Integer cardId, Integer agreementId, String startDt, String finishDt,
-			Double turnAmt, String monthDt) {
-		super(cardNumber, cardId, agreementId, startDt, finishDt, turnAmt, monthDt);
-
-	}
 
 	public TurnXAgr(TurnXAgr turn) {
 		super(turn);
@@ -33,18 +29,24 @@ public class TurnXAgr extends Turn implements Serializable {
 		this.agrStartDt = turn.agrStartDt;
 		this.plannedFinishDt = turn.plannedFinishDt;
 		this.factFinishDt = turn.factFinishDt;
+		this.authAwsDttm = turn.authAwsDttm;
+		this.clrAwsDttm = turn.clrAwsDttm;
+		this.processedDttm = turn.processedDttm;
 	}
 
 	public TurnXAgr(String cardNumber, Integer cardId, Integer agreementId, String cardStartDt, String finishDt,
 			Double turnAmt, String monthDt, Integer customerId, Integer productId, String agreementNumber,
-			String agrStartDt, String plannedFinishDt, String factFinishDt) {
-		super(cardNumber, cardId, agreementId, cardStartDt, finishDt, turnAmt, monthDt);
+			String agrStartDt, String plannedFinishDt, String factFinishDt, String authAwsDttm, String clrAwsDttm) {
+		super(cardNumber, cardId, agreementId, cardStartDt, finishDt, turnAmt, monthDt, authAwsDttm, clrAwsDttm);
 		this.customerId = customerId;
 		this.productId = productId;
 		this.agreementNumber = agreementNumber;
 		this.agrStartDt = agrStartDt;
 		this.plannedFinishDt = plannedFinishDt;
 		this.factFinishDt = factFinishDt;
+		this.authAwsDttm = authAwsDttm;
+		this.clrAwsDttm = clrAwsDttm;
+		this.processedDttm = AwsKinesisData.currentTimestamp();
 	}
 
 	public TurnXAgr(Turn turn, Integer customerId, Integer productId, String agreementNumber, String agrStartDt,
@@ -56,6 +58,9 @@ public class TurnXAgr extends Turn implements Serializable {
 		this.agrStartDt = agrStartDt;
 		this.plannedFinishDt = plannedFinishDt;
 		this.factFinishDt = factFinishDt;
+		this.authAwsDttm = turn.authAwsDttm;
+		this.clrAwsDttm = turn.clrAwsDttm;
+		this.processedDttm = AwsKinesisData.currentTimestamp();
 	}
 
 	public TurnXAgr(Turn turn, Agreement agr) {
@@ -66,18 +71,26 @@ public class TurnXAgr extends Turn implements Serializable {
 		this.agrStartDt = agr.startDt;
 		this.plannedFinishDt = agr.plannedFinishDt;
 		this.factFinishDt = agr.factFinishDt;
+		this.authAwsDttm = turn.authAwsDttm;
+		this.clrAwsDttm = turn.clrAwsDttm;
+		this.processedDttm = AwsKinesisData.currentTimestamp();
 	}
 
 	public TurnXAgr(String str, String cep) {
 		super(str, cep);
 		String arr[] = str.replace("\n", "").split(cep);
 		try {
-			this.customerId = Integer.valueOf(arr[7]);
-			this.productId = Integer.valueOf(arr[8]);
-			this.agreementNumber = arr[9];
-			this.agrStartDt = arr[10];
-			this.plannedFinishDt = arr[11];
-			this.factFinishDt = arr[12];
+			if (!arr[10].equalsIgnoreCase("null")) {
+				this.customerId = Integer.valueOf(arr[10]);
+			}
+			if (!arr[11].equalsIgnoreCase("null")) {
+				this.productId = Integer.valueOf(arr[11]);
+			}
+			this.agreementNumber = arr[12];
+			this.agrStartDt = arr[13];
+			this.plannedFinishDt = arr[14];
+			this.factFinishDt = arr[15];
+			this.processedDttm = arr[16];
 		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
 			log.warn("Not all fields was initialized: " + str);
 		}
@@ -130,7 +143,7 @@ public class TurnXAgr extends Turn implements Serializable {
 	@Override
 	public String toString() {
 		return super.toString().replace("\n", "") + ";" + customerId + ";" + productId + ";" + agreementNumber + ";" + agrStartDt + ";"
-				+ plannedFinishDt + ";" + factFinishDt + "\n";
+				+ plannedFinishDt + ";" + factFinishDt + ";" + processedDttm + "\n";
 	}
 
 }

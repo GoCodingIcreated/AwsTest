@@ -67,7 +67,7 @@ public class ClrLookUp {
 
 			@Override
 			public String map(String value) throws Exception {
-				Clearing clrRec = new Clearing(value);
+				Clearing clrRec = new Clearing(value, ";", true);
 				DynamoDBMapper mapper = new DynamoDBMapper(client);
 				try {
 					ClearingType clrType = mapper.load(ClearingType.class, clrRec.getclearingTypeId());

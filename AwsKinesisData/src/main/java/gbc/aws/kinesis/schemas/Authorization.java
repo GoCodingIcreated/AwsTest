@@ -13,6 +13,9 @@ public class Authorization implements Serializable {
 	protected Double authorizationAmt;
 	protected Integer cardId;
 	protected String authorizationDttm;
+	protected String awsDttm;
+	private String processedDttm;
+	
 
 	public Integer getAuthorizationId() {
 		return authorizationId;
@@ -64,6 +67,8 @@ public class Authorization implements Serializable {
 		this.authorizationAmt = auth.authorizationAmt;
 		this.cardId = auth.cardId;
 		this.authorizationDttm = auth.authorizationDttm;
+		this.processedDttm = auth.processedDttm;
+		this.awsDttm = auth.awsDttm;
 	}
 
 	public Authorization(String str) {
@@ -78,6 +83,25 @@ public class Authorization implements Serializable {
 			this.authorizationAmt = Double.valueOf(arr[2]);
 			this.cardId = Integer.valueOf(arr[3]);
 			this.authorizationDttm = arr[4];
+			this.awsDttm = arr[5]; 
+			this.processedDttm = arr[6];
+			
+		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
+			log.warn("Not all fields was initialized: " + str);
+		}
+	}
+	
+	public Authorization(String str, String cep, boolean isFirstStepFlg) {
+		String arr[] = str.replace("\n", "").split(cep);
+		try {
+			this.authorizationId = Integer.valueOf(arr[0]);
+			this.authorizationTypeId = Integer.valueOf(arr[1]);
+			this.authorizationAmt = Double.valueOf(arr[2]);
+			this.cardId = Integer.valueOf(arr[3]);
+			this.authorizationDttm = arr[4];			
+			this.awsDttm = AwsKinesisData.currentTimestamp(); 
+			this.processedDttm = arr[5];			
+			
 		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
 			log.warn("Not all fields was initialized: " + str);
 		}
@@ -91,12 +115,30 @@ public class Authorization implements Serializable {
 		this.authorizationAmt = authorizationAmt;
 		this.cardId = cardId;
 		this.authorizationDttm = authorizationDttm;
+		this.processedDttm = AwsKinesisData.currentTimestamp();
+		this.awsDttm = AwsKinesisData.currentTimestamp();
 	}
 
 	@Override
 	public String toString() {
 		return authorizationId + ";" + authorizationTypeId + ";" + authorizationAmt + ";" + cardId + ";"
-				+ authorizationDttm + "\n";
+				+ authorizationDttm + ";" + awsDttm + ";" + processedDttm + "\n";
+	}
+
+	public String getProcessedDttm() {
+		return processedDttm;
+	}
+
+	public void setProcessedDttm(String processedDttm) {
+		this.processedDttm = processedDttm;
+	}
+
+	public String getAwsDttm() {
+		return awsDttm;
+	}
+
+	public void setAwsDttm(String awsDttm) {
+		this.awsDttm = awsDttm;
 	}
 
 }

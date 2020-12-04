@@ -13,7 +13,8 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 public class AuthorizationXType extends Authorization implements Serializable {
 	private static final long serialVersionUID = 1L;
 	protected static final Logger log = LoggerFactory.getLogger(AuthorizationXType.class);
-	protected String authorizationTypeNm;
+	protected String authorizationTypeNm;	
+	private String processedDttm;
 
 	public String getAuthorizationTypeNm() {
 		return authorizationTypeNm;
@@ -35,36 +36,46 @@ public class AuthorizationXType extends Authorization implements Serializable {
 		super(str, cep);
 		String arr[] = str.replace("\n", "").split(cep);
 		try {
-			this.authorizationTypeNm = arr[5];
+			this.authorizationTypeNm = arr[7];
+			this.awsDttm = arr[8];
+			this.processedDttm = arr[9];
 		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
 			log.warn("Not all fields was initialized: " + str);
 		}
 	}
 
 	public AuthorizationXType(Integer authorizationId, Integer authorizationTypeId, Double authorizationAmt,
-			Integer cardId, String authorizationDttm, String authorizationTypeNm) {
+			Integer cardId, String authorizationDttm, String authorizationTypeNm, String awsDttm) {
 		super(authorizationId, authorizationTypeId, authorizationAmt, cardId, authorizationDttm);
 		this.authorizationTypeNm = authorizationTypeNm;
+		this.awsDttm = awsDttm;
+		this.processedDttm = AwsKinesisData.currentTimestamp();
 	}
 
 	public AuthorizationXType(Authorization auth, String authorizationTypeNm) {
 		super(auth);
 		this.authorizationTypeNm = authorizationTypeNm;
+		this.awsDttm = auth.awsDttm;
+		this.processedDttm = AwsKinesisData.currentTimestamp();
 	}
 
 	public AuthorizationXType(AuthorizationXType auth) {
 		super(auth);
 		this.authorizationTypeNm = auth.authorizationTypeNm;
+		this.processedDttm = auth.processedDttm;
+		this.awsDttm = auth.awsDttm;
 	}
 
 	public AuthorizationXType(AuthorizationXType auth, AuthorizationType authType) {
 		super(auth);
 		this.authorizationTypeNm = authType.authorizationTypeNm;
+		this.processedDttm = AwsKinesisData.currentTimestamp();
+		this.awsDttm = auth.awsDttm;
 	}
 	
 	@Override
 	public String toString() {
-		return super.toString().replace("\n", "") + ";" + authorizationTypeNm + "\n";
+		return super.toString().replace("\n", "") + ";" + authorizationTypeNm +  ";" + awsDttm + ";" + processedDttm + "\n";
 	}
 
 	@Override
@@ -95,6 +106,16 @@ public class AuthorizationXType extends Authorization implements Serializable {
 	@DynamoDBAttribute(attributeName = "AUTHORIZATION_DTTM")
 	public String getAuthorizationDttm() {
 		return authorizationDttm;
+	}
+
+	@Override
+	@DynamoDBAttribute(attributeName = "PROCESSED_DTTM")
+	public String getProcessedDttm() {
+		return processedDttm;
+	}
+
+	public void setProcessedDttm(String processedDttm) {
+		this.processedDttm = processedDttm;
 	}
 
 }

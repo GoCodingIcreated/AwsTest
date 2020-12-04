@@ -73,7 +73,7 @@ public class AuthLookUp {
 			@Override
 			public void flatMap(String value, Collector<String> out) throws Exception {
 				log.info("Map 1: Got value: " + value);
-				Authorization authRec = new Authorization(value);
+				Authorization authRec = new Authorization(value, ";", true);
 				DynamoDBMapper mapper = new DynamoDBMapper(client);
 				AuthorizationType authType = mapper.load(AuthorizationType.class, authRec.getAuthorizationTypeId());
 				AuthorizationXType authWithType = new AuthorizationXType(authRec, authType.getAuthorizationTypeNm());

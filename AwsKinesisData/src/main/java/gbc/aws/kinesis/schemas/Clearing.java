@@ -14,6 +14,8 @@ public class Clearing implements Serializable {
 	protected Double clearingAmt;
 	protected Integer cardId;
 	protected String clearingDttm;
+	protected String awsDttm;
+	private String processedDttm;
 
 	public Clearing() {
 		super();
@@ -32,6 +34,24 @@ public class Clearing implements Serializable {
 			this.clearingAmt = Double.valueOf(arr[3]);
 			this.cardId = Integer.valueOf(arr[4]);
 			this.clearingDttm = arr[5];
+			this.awsDttm = arr[6];
+			this.processedDttm = arr[7];
+		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
+			log.warn("Not all fields was initialized: " + str);
+		}
+	}
+	
+	public Clearing(String str, String cep, boolean isFirstStepFlg) {
+		String arr[] = str.replace("\n", "").split(cep);
+		try {
+			this.clearingId = Integer.valueOf(arr[0]);
+			this.clearingTypeId = Integer.valueOf(arr[1]);
+			this.authorizationId = Integer.valueOf(arr[2]);
+			this.clearingAmt = Double.valueOf(arr[3]);
+			this.cardId = Integer.valueOf(arr[4]);
+			this.clearingDttm = arr[5];
+			this.awsDttm = AwsKinesisData.currentTimestamp();
+			this.processedDttm = arr[6];
 		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
 			log.warn("Not all fields was initialized: " + str);
 		}
@@ -44,10 +64,12 @@ public class Clearing implements Serializable {
 		this.clearingAmt = clr.clearingAmt;
 		this.cardId = clr.cardId;
 		this.clearingDttm = clr.clearingDttm;
+		this.awsDttm = clr.awsDttm;
+		this.processedDttm = clr.processedDttm;
 	}
 	
 	public Clearing(Integer clearingId, Integer clearingTypeId, Integer authorizationId, Double clearingAmt, Integer cardId,
-			String clearingDttm) {
+			String clearingDttm, String awsDttm) {
 		super();
 		this.clearingId = clearingId;
 		this.clearingTypeId = clearingTypeId;
@@ -55,6 +77,8 @@ public class Clearing implements Serializable {
 		this.clearingAmt = clearingAmt;
 		this.cardId = cardId;
 		this.clearingDttm = clearingDttm;
+		this.awsDttm = awsDttm;
+		this.processedDttm = AwsKinesisData.currentTimestamp();
 	}
 
 	public Integer getClearingId() {
@@ -107,8 +131,24 @@ public class Clearing implements Serializable {
 
 	@Override
 	public String toString() {
-		return clearingId + ";" + clearingTypeId + ";" + authorizationId + ";" + clearingAmt + ";"
-				+ cardId + ";" + clearingDttm + "\n";
+		return clearingId + ";" + clearingTypeId + ";" + authorizationId + ";" + clearingAmt + ";" + cardId + ";"
+				+ clearingDttm + ";" + awsDttm + ";" + processedDttm + "\n";
+	}
+
+	public String getProcessedDttm() {
+		return processedDttm;
+	}
+
+	public void setProcessedDttm(String processedDttm) {
+		this.processedDttm = processedDttm;
+	}
+
+	public String getAwsDttm() {
+		return awsDttm;
+	}
+
+	public void setAwsDttm(String awsDttm) {
+		this.awsDttm = awsDttm;
 	}
 
 }

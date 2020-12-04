@@ -28,8 +28,8 @@ public class BucketAgr {
 	private static final Logger log = LoggerFactory.getLogger(BucketAgr.class);
 
 	private static final String region = "us-east-1";
-	private static final String inputStreamName = "test_turn_x_agr_x_prod";
-	private static final String outputStreamName = "test_bucket_agr";
+	private static final String inputStreamName = "TURN_X_AGR_X_PROD";
+	private static final String outputStreamName = "BUCKET";
 	private static final String aws_access_key_id = AwsKinesisData.getAwsAccessKeyId();
 	private static final String aws_secret_access_key = AwsKinesisData.getAwsSecretAccessKey();
 

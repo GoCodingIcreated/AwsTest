@@ -15,13 +15,16 @@ public class Turn implements Serializable {
 	protected String cardfinishDt;
 	protected Double turnAmt;
 	protected String monthDt;
+	protected String authAwsDttm;
+	protected String clrAwsDttm;
+	private String processedDttm;
 
 	public Turn() {
 		super();
 	}
 
 	public Turn(String cardNumber, Integer cardId, Integer agreementId, String cardStartDt, String cardfinishDt,
-			Double turnAmt, String monthDt) {
+			Double turnAmt, String monthDt, String authAwsDttm, String clrAwsDttm) {
 		super();
 		this.cardNumber = cardNumber;
 		this.cardId = cardId;
@@ -30,6 +33,9 @@ public class Turn implements Serializable {
 		this.cardfinishDt = cardfinishDt;
 		this.turnAmt = turnAmt;
 		this.monthDt = monthDt;
+		this.authAwsDttm = authAwsDttm;
+		this.clrAwsDttm = clrAwsDttm;
+		this.processedDttm = AwsKinesisData.currentTimestamp();
 	}
 
 	public Turn(TransactionXCard trn, Double turnAmt, String monthDt) {
@@ -41,6 +47,9 @@ public class Turn implements Serializable {
 		this.cardfinishDt = trn.finishDt;
 		this.turnAmt = turnAmt;
 		this.monthDt = monthDt;
+		this.authAwsDttm = trn.authAwsDttm;
+		this.clrAwsDttm = trn.clrAwsDttm;
+		this.processedDttm = AwsKinesisData.currentTimestamp();
 	}
 
 	public Turn(Turn turn) {
@@ -52,10 +61,11 @@ public class Turn implements Serializable {
 		this.cardfinishDt = turn.cardfinishDt;
 		this.turnAmt = turn.turnAmt;
 		this.monthDt = turn.monthDt;
+		this.authAwsDttm = turn.authAwsDttm;
+		this.clrAwsDttm = turn.clrAwsDttm;
+		this.processedDttm = turn.processedDttm;
 	}
 
-	
-	
 	public Turn(String str, String cep) {
 		String arr[] = str.replace("\n", "").split(cep);
 		try {
@@ -66,19 +76,24 @@ public class Turn implements Serializable {
 			this.cardfinishDt = arr[4];
 			this.turnAmt = Double.valueOf(arr[5]);
 			this.monthDt = arr[6];
+			this.authAwsDttm = arr[7];
+			this.clrAwsDttm = arr[8];
+			this.processedDttm = arr[9];
 		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
 			log.warn("Not all fields was initialized: " + str);
 		}
 	}
-	
+
 	public Turn(String str) {
 		this(str, ";");
 	}
 
-
 	public Turn(Turn turn, TransactionXCard trn) {
 		this(turn);
 		this.turnAmt += trn.transactionAmt;
+		this.authAwsDttm = trn.authAwsDttm;
+		this.clrAwsDttm = trn.clrAwsDttm;
+		this.processedDttm = AwsKinesisData.currentTimestamp();
 	}
 
 	public String getCardNumber() {
@@ -140,6 +155,14 @@ public class Turn implements Serializable {
 	@Override
 	public String toString() {
 		return cardNumber + ";" + cardId + ";" + agreementId + ";" + cardStartDt + ";" + cardfinishDt + ";" + turnAmt
-				+ ";" + monthDt + "\n";
+				+ ";" + monthDt + ";" + authAwsDttm + ";" + clrAwsDttm + ";" + processedDttm + "\n";
+	}
+
+	public String getProcessedDttm() {
+		return processedDttm;
+	}
+
+	public void setProcessedDttm(String processedDttm) {
+		this.processedDttm = processedDttm;
 	}
 }

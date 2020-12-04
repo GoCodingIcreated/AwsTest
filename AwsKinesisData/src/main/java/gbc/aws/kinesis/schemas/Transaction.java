@@ -5,7 +5,7 @@ import java.io.Serializable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Transaction  implements Serializable {
+public class Transaction implements Serializable {
 	private static Logger log = LoggerFactory.getLogger(Transaction.class);
 	private static final long serialVersionUID = 1L;
 	protected Integer transactionId;
@@ -21,14 +21,18 @@ public class Transaction  implements Serializable {
 	protected String authorizationDttm;
 	protected String authorizationTypeNm;
 	protected Double transactionAmt;
+	protected String clrAwsDttm;
+	protected String authAwsDttm;
+	private String processedDttm;
 
 	public Transaction() {
 		super();
 	}
 
-	public Transaction(Integer transactionId, Integer clearingId, Integer clearingTypeId, Integer authorizationId, Double clearingAmt,
-			Integer cardId, String clearingDttm, String clearingTypeNm, Integer authorizationTypeId, Double authorizationAmt,
-			String authorizationDttm, String authorizationTypeNm, Double transactionAmt) {
+	public Transaction(Integer transactionId, Integer clearingId, Integer clearingTypeId, Integer authorizationId,
+			Double clearingAmt, Integer cardId, String clearingDttm, String clearingTypeNm, Integer authorizationTypeId,
+			Double authorizationAmt, String authorizationDttm, String authorizationTypeNm, Double transactionAmt,
+			String authAwsDttm, String clrAwsDttm) {
 		super();
 		this.transactionId = transactionId;
 		this.clearingId = clearingId;
@@ -43,17 +47,22 @@ public class Transaction  implements Serializable {
 		this.authorizationDttm = authorizationDttm;
 		this.authorizationTypeNm = authorizationTypeNm;
 		this.transactionAmt = transactionAmt;
+		this.authAwsDttm = authAwsDttm;
+		this.clrAwsDttm = clrAwsDttm;
+		this.processedDttm = AwsKinesisData.currentTimestamp();
 	}
-	
+
 	public Transaction(AuthorizationXType auth) {
-		this.transactionId = auth.authorizationId;			
-		this.authorizationId = auth.authorizationId;		
+		this.transactionId = auth.authorizationId;
+		this.authorizationId = auth.authorizationId;
 		this.cardId = auth.cardId;
 		this.authorizationTypeId = auth.authorizationTypeId;
 		this.authorizationAmt = auth.authorizationAmt;
 		this.authorizationDttm = auth.authorizationDttm;
 		this.authorizationTypeNm = auth.authorizationTypeNm;
 		this.transactionAmt = auth.authorizationAmt;
+		this.authAwsDttm = auth.awsDttm;
+		this.processedDttm = AwsKinesisData.currentTimestamp();
 	}
 
 	public Transaction(ClearingXType clr) {
@@ -66,14 +75,16 @@ public class Transaction  implements Serializable {
 		this.clearingDttm = clr.clearingDttm;
 		this.clearingTypeNm = clr.clearingTypeNm;
 		this.transactionAmt = clr.clearingAmt;
+		this.clrAwsDttm = clr.awsDttm;
+		this.processedDttm = AwsKinesisData.currentTimestamp();
 	}
 
-	public Transaction(AuthorizationXType auth, ClearingXType clr) {	
+	public Transaction(AuthorizationXType auth, ClearingXType clr) {
 		this.transactionId = clr.clearingId;
 		this.clearingId = clr.clearingId;
-		this.clearingTypeId = clr.clearingTypeId;	
-		this.authorizationId = clr.authorizationId != null ? clr.authorizationId : auth.authorizationId;		
-		this.clearingAmt = clr.clearingAmt;		
+		this.clearingTypeId = clr.clearingTypeId;
+		this.authorizationId = clr.authorizationId != null ? clr.authorizationId : auth.authorizationId;
+		this.clearingAmt = clr.clearingAmt;
 		this.cardId = clr.cardId != null ? clr.cardId : auth.cardId;
 		this.clearingDttm = clr.clearingDttm;
 		this.clearingTypeNm = clr.clearingTypeNm;
@@ -82,14 +93,17 @@ public class Transaction  implements Serializable {
 		this.authorizationDttm = auth.authorizationDttm;
 		this.authorizationTypeNm = auth.authorizationTypeNm;
 		this.transactionAmt = clr.clearingAmt != null ? clr.clearingAmt : auth.authorizationAmt;
+		this.clrAwsDttm = clr.awsDttm;
+		this.authAwsDttm = auth.awsDttm;
+		this.processedDttm = AwsKinesisData.currentTimestamp();
 	}
 
 	public Transaction(Transaction trn) {
 		this.transactionId = trn.clearingId;
 		this.clearingId = trn.clearingId;
-		this.clearingTypeId = trn.clearingTypeId;	
-		this.authorizationId = trn.authorizationId;		
-		this.clearingAmt = trn.clearingAmt;		
+		this.clearingTypeId = trn.clearingTypeId;
+		this.authorizationId = trn.authorizationId;
+		this.clearingAmt = trn.clearingAmt;
 		this.cardId = trn.cardId;
 		this.clearingDttm = trn.clearingDttm;
 		this.clearingTypeNm = trn.clearingTypeNm;
@@ -98,14 +112,17 @@ public class Transaction  implements Serializable {
 		this.authorizationDttm = trn.authorizationDttm;
 		this.authorizationTypeNm = trn.authorizationTypeNm;
 		this.transactionAmt = trn.transactionAmt;
+		this.authAwsDttm = trn.authAwsDttm;
+		this.clrAwsDttm = trn.clrAwsDttm;
+		this.processedDttm = trn.processedDttm;
 	}
 
 	public Transaction(Transaction trn, AuthorizationXType auth) {
 		this.transactionId = trn.clearingId;
 		this.clearingId = trn.clearingId;
-		this.clearingTypeId = trn.clearingTypeId;	
-		this.authorizationId = trn.authorizationId != null ? trn.authorizationId : auth.authorizationId;		
-		this.clearingAmt = trn.clearingAmt;		
+		this.clearingTypeId = trn.clearingTypeId;
+		this.authorizationId = trn.authorizationId != null ? trn.authorizationId : auth.authorizationId;
+		this.clearingAmt = trn.clearingAmt;
 		this.cardId = trn.cardId != null ? trn.cardId : auth.cardId;
 		this.clearingDttm = trn.clearingDttm;
 		this.clearingTypeNm = trn.clearingTypeNm;
@@ -114,14 +131,18 @@ public class Transaction  implements Serializable {
 		this.authorizationDttm = auth.authorizationDttm;
 		this.authorizationTypeNm = auth.authorizationTypeNm;
 		this.transactionAmt = trn.transactionAmt != null ? trn.transactionAmt : auth.authorizationAmt;
+		this.clrAwsDttm = trn.clrAwsDttm;
+		this.authAwsDttm = auth.awsDttm;
+		this.processedDttm = AwsKinesisData.currentTimestamp();
 	}
 
 	public Transaction(Transaction trn, ClearingXType clr) {
 		this.transactionId = clr.clearingId;
 		this.clearingId = clr.clearingId;
-		this.clearingTypeId = clr.clearingTypeId;	
-		this.authorizationId = clr.authorizationId != null ? clr.authorizationId : trn.authorizationId;;		
-		this.clearingAmt = clr.clearingAmt;		
+		this.clearingTypeId = clr.clearingTypeId;
+		this.authorizationId = clr.authorizationId != null ? clr.authorizationId : trn.authorizationId;
+		;
+		this.clearingAmt = clr.clearingAmt;
 		this.cardId = clr.cardId != null ? clr.cardId : trn.cardId;
 		this.clearingDttm = clr.clearingDttm;
 		this.clearingTypeNm = clr.clearingTypeNm;
@@ -130,6 +151,9 @@ public class Transaction  implements Serializable {
 		this.authorizationDttm = trn.authorizationDttm;
 		this.authorizationTypeNm = trn.authorizationTypeNm;
 		this.transactionAmt = clr.clearingAmt != null ? clr.clearingAmt : trn.transactionAmt;
+		this.authAwsDttm = trn.authAwsDttm;
+		this.clrAwsDttm = clr.awsDttm;
+		this.processedDttm = AwsKinesisData.currentTimestamp();
 	}
 
 	public Transaction(String str, String cep) {
@@ -142,10 +166,10 @@ public class Transaction  implements Serializable {
 				this.clearingId = Integer.valueOf(arr[1]);
 			}
 			if (!arr[2].equals("null")) {
-				this.clearingTypeId = Integer.valueOf(arr[2]);	
+				this.clearingTypeId = Integer.valueOf(arr[2]);
 			}
 			if (!arr[3].equals("null")) {
-				this.authorizationId = Integer.valueOf(arr[3]);	
+				this.authorizationId = Integer.valueOf(arr[3]);
 			}
 			if (!arr[4].equals("null")) {
 				this.clearingAmt = Double.valueOf(arr[4]);
@@ -157,7 +181,7 @@ public class Transaction  implements Serializable {
 				this.clearingDttm = arr[6];
 			}
 			if (!arr[7].equals("null")) {
-				this.clearingTypeNm = arr[7];	
+				this.clearingTypeNm = arr[7];
 			}
 			if (!arr[8].equals("null")) {
 				this.authorizationTypeId = Integer.valueOf(arr[8]);
@@ -174,17 +198,20 @@ public class Transaction  implements Serializable {
 			if (!arr[12].equals("null")) {
 				this.transactionAmt = Double.valueOf(arr[12]);
 			}
-	
+			this.authAwsDttm = arr[13];
+			this.clrAwsDttm = arr[14];
+			this.processedDttm = arr[15];
+
 		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
 			log.warn("Not all fields was initialized: " + str);
 		}
-		
+
 	}
-	
+
 	public Transaction(String str) {
 		this(str, ";");
 	}
-	
+
 	public Integer getTransactionId() {
 		return transactionId;
 	}
@@ -293,7 +320,32 @@ public class Transaction  implements Serializable {
 	public String toString() {
 		return transactionId + ";" + clearingId + ";" + clearingTypeId + ";" + authorizationId + ";" + clearingAmt + ";"
 				+ cardId + ";" + clearingDttm + ";" + clearingTypeNm + ";" + authorizationTypeId + ";"
-				+ authorizationAmt + ";" + authorizationDttm + ";" + authorizationTypeNm + ";" + transactionAmt + "\n";
+				+ authorizationAmt + ";" + authorizationDttm + ";" + authorizationTypeNm + ";" + transactionAmt + ";"
+				+ authAwsDttm + ";" + clrAwsDttm + ";" + processedDttm + "\n";
+	}
+
+	public String getProcessedDttm() {
+		return processedDttm;
+	}
+
+	public void setProcessedDttm(String processedDttm) {
+		this.processedDttm = processedDttm;
+	}
+
+	public String getClrAwsDttm() {
+		return clrAwsDttm;
+	}
+
+	public void setClrAwsDttm(String clrAwsDttm) {
+		this.clrAwsDttm = clrAwsDttm;
+	}
+
+	public String getAuthAwsDttm() {
+		return authAwsDttm;
+	}
+
+	public void setAuthAwsDttm(String authAwsDttm) {
+		this.authAwsDttm = authAwsDttm;
 	}
 
 }

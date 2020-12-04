@@ -10,6 +10,7 @@ public class BucketXCustomer extends Bucket {
 	protected String firstName;
 	protected String middleName;
 	protected String birthDt;
+	private String processedDttm;
 
 	public BucketXCustomer() {
 
@@ -21,6 +22,7 @@ public class BucketXCustomer extends Bucket {
 		this.firstName = cust.firstName;
 		this.middleName = cust.middleName;
 		this.birthDt = cust.birthDt;
+		this.processedDttm = AwsKinesisData.currentTimestamp();
 	}
 
 	public BucketXCustomer(BucketXCustomer bucket) {
@@ -29,15 +31,17 @@ public class BucketXCustomer extends Bucket {
 		this.firstName = bucket.firstName;
 		this.middleName = bucket.middleName;
 		this.birthDt = bucket.birthDt;
+		this.processedDttm = bucket.processedDttm;
 	}
 
 	public BucketXCustomer(Integer customerId, String monthDt, Double customerTurnAmt, String lastName,
-			String firstName, String middleName, String birthDt) {
-		super(customerId, monthDt, customerTurnAmt);
+			String firstName, String middleName, String birthDt, String authAwsDttm, String clrAwsDttm) {
+		super(customerId, monthDt, customerTurnAmt, authAwsDttm, clrAwsDttm);
 		this.lastName = lastName;
 		this.firstName = firstName;
 		this.middleName = middleName;
 		this.birthDt = birthDt;
+		this.processedDttm = AwsKinesisData.currentTimestamp();
 	}
 
 	public BucketXCustomer(Bucket bucket, String lastName, String firstName, String middleName, String birthDt) {
@@ -46,16 +50,18 @@ public class BucketXCustomer extends Bucket {
 		this.firstName = firstName;
 		this.middleName = middleName;
 		this.birthDt = birthDt;
+		this.processedDttm = AwsKinesisData.currentTimestamp();
 	}
 
 	public BucketXCustomer(String str, String cep) {
 		super(str, cep);
 		String arr[] = str.replace("\n", "").split(cep);
 		try {
-			this.lastName = arr[3];
-			this.firstName = arr[4];
-			this.middleName = arr[5];
-			this.birthDt = arr[6];
+			this.lastName = arr[6];
+			this.firstName = arr[7];
+			this.middleName = arr[8];
+			this.birthDt = arr[9];
+			this.processedDttm = arr[10];
 		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
 			log.warn("Not all fields was initialized: " + str);
 		}
@@ -99,7 +105,7 @@ public class BucketXCustomer extends Bucket {
 
 	@Override
 	public String toString() {
-		return super.toString().replace("\n", "") + ";" + lastName + ";" + firstName + ";" + middleName + ";" + birthDt + "\n";
+		return super.toString().replace("\n", "") + ";" + lastName + ";" + firstName + ";" + middleName + ";" + birthDt + ";" + processedDttm + "\n";
 	}
 
 }
