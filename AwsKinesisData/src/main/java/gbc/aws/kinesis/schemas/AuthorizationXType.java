@@ -66,13 +66,15 @@ public class AuthorizationXType extends Authorization implements Serializable {
 		this.awsDttm = auth.awsDttm;
 	}
 
-	public AuthorizationXType(AuthorizationXType auth, AuthorizationType authType) {
+	public AuthorizationXType(Authorization auth, AuthorizationType authType) {
 		super(auth);
 		this.authorizationTypeNm = authType.authorizationTypeNm;
 		this.processedDttm = AwsKinesisData.currentTimestamp();
 		this.awsDttm = auth.awsDttm;
 	}
 	
+
+
 	@Override
 	public String toString() {
 		return super.toString().replace("\n", "") + ";" + authorizationTypeNm +  ";" + awsDttm + ";" + processedDttm + "\n";
