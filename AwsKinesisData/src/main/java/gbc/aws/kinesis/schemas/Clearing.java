@@ -51,7 +51,7 @@ public class Clearing implements Serializable {
 			this.cardId = Integer.valueOf(arr[4]);
 			this.clearingDttm = arr[5];
 			this.awsDttm = AwsKinesisData.currentTimestamp();
-			this.processedDttm = arr[6];
+			this.processedDttm = AwsKinesisData.currentTimestamp();
 		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
 			log.warn("Not all fields was initialized: " + str);
 		}

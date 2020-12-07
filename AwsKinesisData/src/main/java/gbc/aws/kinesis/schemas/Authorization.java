@@ -100,7 +100,7 @@ public class Authorization implements Serializable {
 			this.cardId = Integer.valueOf(arr[3]);
 			this.authorizationDttm = arr[4];			
 			this.awsDttm = AwsKinesisData.currentTimestamp(); 
-			this.processedDttm = arr[5];			
+			this.processedDttm = AwsKinesisData.currentTimestamp();			
 			
 		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
 			log.warn("Not all fields was initialized: " + str);
