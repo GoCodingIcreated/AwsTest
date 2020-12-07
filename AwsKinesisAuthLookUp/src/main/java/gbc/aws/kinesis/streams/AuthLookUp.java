@@ -1,11 +1,7 @@
 package gbc.aws.kinesis.streams;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Properties;
 
-import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.common.state.MapState;
@@ -20,11 +16,6 @@ import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
-import com.amazonaws.services.kinesisanalytics.model.KinesisStreamsInput;
-
 import gbc.aws.kinesis.schemas.Authorization;
 import gbc.aws.kinesis.schemas.AuthorizationType;
 import gbc.aws.kinesis.schemas.AuthorizationXType;
@@ -36,11 +27,11 @@ public class AuthLookUp {
 	private static final String inputLookUpStreamName = "AUTH_TYPE";
 	private static final String outputStreamName = "AUTH_X_TYPE";
 
-	private static final List<String> allowedAuthType = new ArrayList<>(
-			Arrays.asList(new String[] { "authorization_type_10000015", "authorization_type_10000017" }));
+	//private static final List<String> allowedAuthType = new ArrayList<>(
+//			Arrays.asList(new String[] { "authorization_type_10000015", "authorization_type_10000017" }));
 	private static final Logger log = LoggerFactory.getLogger(AuthLookUp.class);
 
-	private static final AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
+	// private static final AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
 
 	private static final String aws_access_key_id = AwsKinesisData.getAwsAccessKeyId();
 	private static final String aws_secret_access_key = AwsKinesisData.getAwsSecretAccessKey();
