@@ -101,7 +101,12 @@ public class AuthLookUp {
 			Authorization auth = new Authorization(record);			
 			Integer stateKey = auth.getAuthorizationId();
 			AuthorizationType rec = authState.get(stateKey);
-
+			String output = "";
+			for (AuthorizationType a: authState.values()) {
+				output += a.toString() + "; ";
+			}
+			
+			log.info("Got state: record: " + record + ", auth: " + auth + ", AuthorizationType: " + rec + ", All_state: " + output);
 			AuthorizationXType result = new AuthorizationXType(auth, rec);
 			log.info("ProcessElement1 record: " + record + ", auth: " + auth + ", result: " + result);
 			out.collect(result.toString());
