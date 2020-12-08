@@ -89,11 +89,11 @@ public class Clearing implements Serializable {
 		this.clearingId = clearingId;
 	}
 
-	public Integer getclearingTypeId() {
+	public Integer getClearingTypeId() {
 		return clearingTypeId;
 	}
 
-	public void setclearingTypeId(Integer clearingTypeId) {
+	public void setClearingTypeId(Integer clearingTypeId) {
 		this.clearingTypeId = clearingTypeId;
 	}
 
