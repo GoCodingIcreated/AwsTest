@@ -2,13 +2,13 @@ package gbc.aws.kinesis.streams;
 
 import java.util.Properties;
 
-import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.co.CoProcessFunction;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisConsumer;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisProducer;
 import org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConstants;
@@ -27,11 +27,12 @@ public class AuthLookUp {
 	private static final String inputLookUpStreamName = "AUTH_TYPE";
 	private static final String outputStreamName = "AUTH_X_TYPE";
 
-	//private static final List<String> allowedAuthType = new ArrayList<>(
+	// private static final List<String> allowedAuthType = new ArrayList<>(
 //			Arrays.asList(new String[] { "authorization_type_10000015", "authorization_type_10000017" }));
 	private static final Logger log = LoggerFactory.getLogger(AuthLookUp.class);
 
-	// private static final AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
+	// private static final AmazonDynamoDB client =
+	// AmazonDynamoDBClientBuilder.standard().build();
 
 	private static final String aws_access_key_id = AwsKinesisData.getAwsAccessKeyId();
 	private static final String aws_secret_access_key = AwsKinesisData.getAwsSecretAccessKey();
@@ -63,56 +64,56 @@ public class AuthLookUp {
 
 		DataStream<String> input = createSourceFromStaticConfig(env, inputStreamName);
 		DataStream<String> inputLookUp = createSourceFromStaticConfig(env, inputLookUpStreamName);
-		DataStream<String> auth = input
-				.keyBy(value -> new Authorization(value).getAuthorizationTypeId())
-				.flatMap(new RichFlatMapFunction<String, String>() {
-					private static final long serialVersionUID = 1L;
-					private transient MapState<Integer, AuthorizationType> state;
-					@Override
-					public void flatMap(String value, Collector<String> out) throws Exception {
-						log.info("Map 1: Got value: " + value);
-						Authorization authRec = new Authorization(value, ";", true);
-						
-						AuthorizationType authType = state.get(authRec.getAuthorizationTypeId());
-						AuthorizationXType authWithType = new AuthorizationXType(authRec, authType);
-		
-						log.info("Map 1: Collected value: " + value + ", authRec: " + authRec + ", authType: " + authType
-								+ ", authWithType: " + authWithType + ", AuthorizationTypeNm: " + authWithType.getAuthorizationTypeNm());
-						out.collect(authWithType.toString());
-					}
-					
-					@Override
-					public void open(Configuration conf) {
-						MapStateDescriptor<Integer, AuthorizationType> sumDesc = new MapStateDescriptor<>("sumOfTransaction", Integer.class,
-								AuthorizationType.class);
-						state = getRuntimeContext().getMapState(sumDesc);
-					}
-				});
 
-		inputLookUp
-				.keyBy(value -> new AuthorizationType().getAuthorizationTypeId())
-				.flatMap(new RichFlatMapFunction<String, String>() {
-					private static final long serialVersionUID = 1L;
-					private transient MapState<Integer, AuthorizationType> state;
-					
-					@Override
-					public void flatMap(String value, Collector<String> out) throws Exception {
-						log.info("Map 1: Got value: " + value);
-						AuthorizationType authLookUp = new AuthorizationType(value);
-						state.put(authLookUp.getAuthorizationTypeId(), authLookUp);
-						log.info("Map 1: Stated value: " + value + ", authLookUp: " + authLookUp);
-					}
-					
-					@Override
-					public void open(Configuration conf) {
-						MapStateDescriptor<Integer, AuthorizationType> sumDesc = new MapStateDescriptor<>("sumOfTransaction", Integer.class,
-								AuthorizationType.class);
-						state = getRuntimeContext().getMapState(sumDesc);
-					}
-				});
-		
-		auth.addSink(createSinkFromStaticConfig(outputStreamName));
+		input.connect(inputLookUp).keyBy((value) -> {
+			Authorization authRec = new Authorization(value);
+			log.info("Got Authorization key value: " + authRec.getAuthorizationTypeId());
+			return authRec.getAuthorizationTypeId();
+		}, (value) -> {
+			AuthorizationType authType = new AuthorizationType(value);
+			log.info("Got AuthorizationType key value: " + authType.getAuthorizationTypeId());
+			return authType.getAuthorizationTypeId();
+		}).process(new PseudoWindow()).addSink(createSinkFromStaticConfig(outputStreamName));
 
 		env.execute("AuthLookUp v.1.13");
+	}
+
+	public static class PseudoWindow extends CoProcessFunction<String, String, String> {
+
+		private static final long serialVersionUID = 1L;
+
+		public PseudoWindow() {
+
+		}
+
+		private transient MapState<Integer, AuthorizationType> authState;
+
+		@Override
+		public void open(Configuration conf) {
+			MapStateDescriptor<Integer, AuthorizationType> authLookUpState = new MapStateDescriptor<>("authLookUpState",
+					Integer.class, AuthorizationType.class);
+			authState = getRuntimeContext().getMapState(authLookUpState);
+		}
+
+		@Override
+		public void processElement1(String record, Context ctx, Collector<String> out) throws Exception {
+			log.info("Got record: " + record);
+			Authorization auth = new Authorization(record);			
+			Integer stateKey = auth.getAuthorizationId();
+			AuthorizationType rec = authState.get(stateKey);
+
+			AuthorizationXType result = new AuthorizationXType(auth, rec);
+			log.info("ProcessElement1 record: " + record + ", auth: " + auth + ", result: " + result);
+			out.collect(result.toString());
+		}
+
+		@Override
+		public void processElement2(String record, Context ctx, Collector<String> out) throws Exception {
+			log.info("Map 1: Got record: " + record);
+			AuthorizationType authLookUp = new AuthorizationType(record);
+			authState.put(authLookUp.getAuthorizationTypeId(), authLookUp);
+			log.info("Map 1: Stated record: " + record + ", authLookUp: " + authLookUp);
+		}
+
 	}
 }
