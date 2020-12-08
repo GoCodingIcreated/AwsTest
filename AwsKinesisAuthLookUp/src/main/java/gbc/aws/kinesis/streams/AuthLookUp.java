@@ -98,15 +98,11 @@ public class AuthLookUp {
 		@Override
 		public void processElement1(String record, Context ctx, Collector<String> out) throws Exception {
 			log.info("Got record: " + record);
-			Authorization auth = new Authorization(record);			
-			Integer stateKey = auth.getAuthorizationId();
-			AuthorizationType rec = authState.get(stateKey);
-			String output = "";
-			for (AuthorizationType a: authState.values()) {
-				output += a.toString() + "; ";
-			}
+			Authorization auth = new Authorization(record, ";", true);			
+			Integer stateKey = auth.getAuthorizationTypeId();
+			AuthorizationType rec = new AuthorizationType(authState.get(stateKey));
 			
-			log.info("Got state: record: " + record + ", auth: " + auth + ", AuthorizationType: " + rec + ", All_state: " + output);
+			log.info("Got state: record: " + record + ", auth: " + auth + ", AuthorizationType: " + rec);
 			AuthorizationXType result = new AuthorizationXType(auth, rec);
 			log.info("ProcessElement1 record: " + record + ", auth: " + auth + ", result: " + result);
 			out.collect(result.toString());
