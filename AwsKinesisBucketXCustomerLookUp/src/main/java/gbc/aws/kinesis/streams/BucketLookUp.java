@@ -62,12 +62,21 @@ public class BucketLookUp {
 		DataStream<String> input = createSourceFromStaticConfig(env);
 		DataStream<String> bucketXCustomer = input.map((bucketStr) -> {
 			Bucket bucket = new Bucket(bucketStr);
+			
 			DynamoDBMapper mapper = new DynamoDBMapper(client);
-			Customer customer = mapper.load(Customer.class, bucket.getCustomerId());
-			BucketXCustomer bucketXCust = new BucketXCustomer(bucket, customer);
-			log.info("Map 1: bucket: " + bucket + ", customer: " + customer + ", bucketXCust: " + bucketXCust);
-			return bucketXCust.toString();
-
+			try {
+				Customer customer = mapper.load(Customer.class, bucket.getCustomerId());
+				BucketXCustomer bucketXCust = new BucketXCustomer(bucket, customer);
+				log.info("Map_1: bucket: " + bucket + ", customer: " + customer + ", bucketXCust: " + bucketXCust);
+				return bucketXCust.toString();
+			}
+			catch(Exception ex) {
+				log.error("Map_1 exception: ", ex);
+				Customer customer = new Customer();
+				BucketXCustomer bucketXCust = new BucketXCustomer(bucket, customer);
+				log.error("Map_1: bucket: " + bucket + ", customer: " + customer + ", bucketXCust: " + bucketXCust);
+				return bucketXCust.toString();
+			}
 		});
 
 		bucketXCustomer.addSink(createSinkFromStaticConfig());

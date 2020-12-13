@@ -62,10 +62,19 @@ public class TurnXAgrLookUp {
 		DataStream<String> turnXAgreementXProduct = input.map((turnXAgrStr) -> {
 			TurnXAgr turnXAgr = new TurnXAgr(turnXAgrStr);
 			DynamoDBMapper mapper = new DynamoDBMapper(client);
-			Product prod = mapper.load(Product.class, turnXAgr.getAgreementId());
-			TurnXAgrXProd turnXAgrXProd = new TurnXAgrXProd(turnXAgr, prod);
-			log.info("Map 1: turnXAgr: " + turnXAgr + ", prod: " + prod + ", turnXAgrXProd: " + turnXAgrXProd);
-			return turnXAgrXProd.toString();
+			try {
+				Product prod = mapper.load(Product.class, turnXAgr.getAgreementId());
+				TurnXAgrXProd turnXAgrXProd = new TurnXAgrXProd(turnXAgr, prod);
+				log.info("Map 1: turnXAgr: " + turnXAgr + ", prod: " + prod + ", turnXAgrXProd: " + turnXAgrXProd);
+				return turnXAgrXProd.toString();
+			}
+			catch(Exception ex) {
+				log.error("Map_1 exception: ", ex);
+				Product prod = new Product();
+				TurnXAgrXProd turnXAgrXProd = new TurnXAgrXProd(turnXAgr, prod);
+				log.error("Map 1: turnXAgr: " + turnXAgr + ", prod: " + prod + ", turnXAgrXProd: " + turnXAgrXProd);
+				return turnXAgrXProd.toString();
+			}
 		});
 
 		turnXAgreementXProduct.addSink(createSinkFromStaticConfig());

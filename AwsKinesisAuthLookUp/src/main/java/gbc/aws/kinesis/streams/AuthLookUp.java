@@ -1,8 +1,5 @@
 package gbc.aws.kinesis.streams;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Properties;
 
 import org.apache.flink.api.common.functions.FlatMapFunction;
@@ -31,8 +28,6 @@ public class AuthLookUp {
 	private static final String inputStreamName = "AUTHORIZATION";
 	private static final String outputStreamName = "AUTH_X_TYPE";
 
-	private static final List<String> allowedAuthType = new ArrayList<>(
-			Arrays.asList(new String[] { "authorization_type_10000015", "authorization_type_10000017" }));
 	private static final Logger log = LoggerFactory.getLogger(AuthLookUp.class);
 
 	private static final AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
@@ -72,25 +67,28 @@ public class AuthLookUp {
 
 			@Override
 			public void flatMap(String value, Collector<String> out) throws Exception {
-				log.info("Map 1: Got value: " + value);
+				log.info("Map_1: Got value: " + value);
 				Authorization authRec = new Authorization(value, ";", true);
-				DynamoDBMapper mapper = new DynamoDBMapper(client);
-				AuthorizationType authType = mapper.load(AuthorizationType.class, authRec.getAuthorizationTypeId());
-				AuthorizationXType authWithType = new AuthorizationXType(authRec, authType.getAuthorizationTypeNm());
-
-				if (true || allowedAuthType.contains(authWithType.getAuthorizationTypeNm())) {
-					log.info("Map 1: Collected value: " + value + ", authRec: " + authRec + ", authType: " + authType
+				try {
+					
+					DynamoDBMapper mapper = new DynamoDBMapper(client);
+					AuthorizationType authType = mapper.load(AuthorizationType.class, authRec.getAuthorizationTypeId());
+					AuthorizationXType authWithType = new AuthorizationXType(authRec, authType.getAuthorizationTypeNm());
+	
+					log.info("Map_1: Collected value: " + value + ", authRec: " + authRec + ", authType: " + authType
 							+ ", authWithType: " + authWithType + ", AuthorizationTypeNm: " + authWithType.getAuthorizationTypeNm());
 					out.collect(authWithType.toString());
-				} else {
-					log.info("Map 1: Not collected value: " + value + ", authRec: " + authRec + ", authType: "
-							+ authType + ", authWithType: " + authWithType);
+				} catch(Exception ex) {
+					log.error("Map_1 exception: ", ex);
+					AuthorizationXType authWithType = new AuthorizationXType(authRec, new AuthorizationType());
+					log.error("Map_1: value: " + value + ", authRec: " + authRec + ", authWithType: " + authWithType);
+					out.collect(authWithType.toString());
 				}
 			}
 		});
 
 		auth.addSink(createSinkFromStaticConfig());
 
-		env.execute("AuthLookUp v.1.13");
+		env.execute("AuthLookUp v.1.13");		
 	}
 }

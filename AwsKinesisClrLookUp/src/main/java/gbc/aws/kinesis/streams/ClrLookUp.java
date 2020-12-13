@@ -77,6 +77,7 @@ public class ClrLookUp {
 					return clrWithType.toString();
 				}
 				catch (Exception ex) {
+					log.error("Map_1 exception: ", ex);
 					ClearingXType clrWithType = new ClearingXType(clrRec, ""); 
 					log.error("Map 1: Value: " + value + ", clrRec: " + clrRec + ", clrType: null, clrWithType: "
 							+ clrWithType);

@@ -61,11 +61,21 @@ public class TurnLookUp {
 		DataStream<String> input = createSourceFromStaticConfig(env);
 		DataStream<String> turnXAgreement = input.map((turnStr) -> {
 			Turn turn = new Turn(turnStr);
-			DynamoDBMapper mapper = new DynamoDBMapper(client);			
-			Agreement agr = mapper.load(Agreement.class, turn.getAgreementId());
-			TurnXAgr turnXAgr = new TurnXAgr(turn, agr);
-			log.info("Map 1: turn: " + turn + ", agr: " + agr + ", turnXAgr: " + turnXAgr);
-			return turnXAgr.toString();
+			DynamoDBMapper mapper = new DynamoDBMapper(client);
+			try {
+				Agreement agr = mapper.load(Agreement.class, turn.getAgreementId());
+				TurnXAgr turnXAgr = new TurnXAgr(turn, agr);
+				log.info("Map 1: turn: " + turn + ", agr: " + agr + ", turnXAgr: " + turnXAgr);
+				return turnXAgr.toString();
+			}
+			catch(Exception ex) {
+				log.error("Map_1: exception: ", ex);
+				Agreement agr = new Agreement();
+				TurnXAgr turnXAgr = new TurnXAgr(turn, agr);
+				log.error("Map 1: turn: " + turn + ", agr: " + agr + ", turnXAgr: " + turnXAgr);
+				return turnXAgr.toString();
+			}
+			
 
 		});
 

@@ -71,12 +71,13 @@ public class TrnLookUp {
 						Transaction trn = new Transaction(trnStr);
 						Card card = mapper.load(Card.class, trn.getCardId());			
 						TransactionXCard trnXCard = new TransactionXCard(trn, card);
-						log.info("Map 1: trans: " + trn + ", card: " + card + ", transXCard: " + trnXCard);
+						log.info("Map_1: trans: " + trn + ", card: " + card + ", transXCard: " + trnXCard);
 						return trnXCard.toString();
 					} 
 					catch (Exception ex) {
+						log.error("Map_1 exception: ", ex);
 						TransactionXCard trnXCard = new TransactionXCard(new Transaction(trnStr), new Card()); 
-						log.error("Map 1: Value: " + trnStr + ", trnXCard: " + trnXCard + ", trn: " + new Transaction(trnStr) + ", card: null");
+						log.error("Map_1: Value: " + trnStr + ", trnXCard: " + trnXCard + ", trn: " + new Transaction(trnStr) + ", card: null");
 						return trnXCard.toString();
 					}
 				}
