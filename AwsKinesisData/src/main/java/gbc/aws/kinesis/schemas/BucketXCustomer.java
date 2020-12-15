@@ -108,4 +108,12 @@ public class BucketXCustomer extends Bucket {
 		return super.toString().replace("\n", "") + ";" + lastName + ";" + firstName + ";" + middleName + ";" + birthDt + ";" + processedDttm + "\n";
 	}
 
+	public String getProcessedDttm() {
+		return processedDttm;
+	}
+
+	public void setProcessedDttm(String processedDttm) {
+		this.processedDttm = processedDttm;
+	}
+
 }

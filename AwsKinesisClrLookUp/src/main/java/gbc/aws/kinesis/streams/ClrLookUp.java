@@ -41,6 +41,8 @@ public class ClrLookUp {
 		inputProperties.setProperty(ConsumerConfigConstants.STREAM_INITIAL_POSITION, "LATEST");
 		inputProperties.setProperty(ConsumerConfigConstants.AWS_SECRET_ACCESS_KEY, aws_secret_access_key);
 		inputProperties.setProperty(ConsumerConfigConstants.AWS_ACCESS_KEY_ID, aws_access_key_id);
+		
+		
 
 		return env.addSource(new FlinkKinesisConsumer<>(inputStreamName, new SimpleStringSchema(), inputProperties));
 	}
@@ -70,7 +72,7 @@ public class ClrLookUp {
 				Clearing clrRec = new Clearing(value, ";", true);
 				DynamoDBMapper mapper = new DynamoDBMapper(client);
 				try {
-					ClearingType clrType = mapper.load(ClearingType.class, clrRec.getclearingTypeId());
+					ClearingType clrType = mapper.load(ClearingType.class, clrRec.getClearingTypeId());
 					ClearingXType clrWithType = new ClearingXType(clrRec, clrType.getClearingTypeNm());
 					log.info("Map 1: Value: " + value + ", clrRec: " + clrRec + ", clrType: " + clrType + ", clrWithType: "
 							+ clrWithType);

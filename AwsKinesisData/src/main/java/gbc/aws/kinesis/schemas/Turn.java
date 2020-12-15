@@ -5,6 +5,12 @@ import java.io.Serializable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
+
+
+@DynamoDBTable(tableName = "TURN")
 public class Turn implements Serializable {
 	protected static final Logger log = LoggerFactory.getLogger(Turn.class);
 	private static final long serialVersionUID = 1L;
@@ -12,7 +18,7 @@ public class Turn implements Serializable {
 	protected Integer cardId;
 	protected Integer agreementId;
 	protected String cardStartDt;
-	protected String cardfinishDt;
+	protected String cardFinishDt;
 	protected Double turnAmt;
 	protected String monthDt;
 	protected String authAwsDttm;
@@ -23,14 +29,14 @@ public class Turn implements Serializable {
 		super();
 	}
 
-	public Turn(String cardNumber, Integer cardId, Integer agreementId, String cardStartDt, String cardfinishDt,
+	public Turn(String cardNumber, Integer cardId, Integer agreementId, String cardStartDt, String cardFinishDt,
 			Double turnAmt, String monthDt, String authAwsDttm, String clrAwsDttm) {
 		super();
 		this.cardNumber = cardNumber;
 		this.cardId = cardId;
 		this.agreementId = agreementId;
 		this.cardStartDt = cardStartDt;
-		this.cardfinishDt = cardfinishDt;
+		this.cardFinishDt = cardFinishDt;
 		this.turnAmt = turnAmt;
 		this.monthDt = monthDt;
 		this.authAwsDttm = authAwsDttm;
@@ -44,7 +50,7 @@ public class Turn implements Serializable {
 		this.cardId = trn.cardId;
 		this.agreementId = trn.agreementId;
 		this.cardStartDt = trn.startDt;
-		this.cardfinishDt = trn.finishDt;
+		this.cardFinishDt = trn.finishDt;
 		this.turnAmt = turnAmt;
 		this.monthDt = monthDt;
 		this.authAwsDttm = trn.authAwsDttm;
@@ -58,7 +64,7 @@ public class Turn implements Serializable {
 		this.cardId = turn.cardId;
 		this.agreementId = turn.agreementId;
 		this.cardStartDt = turn.cardStartDt;
-		this.cardfinishDt = turn.cardfinishDt;
+		this.cardFinishDt = turn.cardFinishDt;
 		this.turnAmt = turn.turnAmt;
 		this.monthDt = turn.monthDt;
 		this.authAwsDttm = turn.authAwsDttm;
@@ -73,7 +79,7 @@ public class Turn implements Serializable {
 			this.cardId = Integer.valueOf(arr[1]);
 			this.agreementId = Integer.valueOf(arr[2]);
 			this.cardStartDt = arr[3];
-			this.cardfinishDt = arr[4];
+			this.cardFinishDt = arr[4];
 			this.turnAmt = Double.valueOf(arr[5]);
 			this.monthDt = arr[6];
 			this.authAwsDttm = arr[7];
@@ -96,6 +102,7 @@ public class Turn implements Serializable {
 		this.processedDttm = AwsKinesisData.currentTimestamp();
 	}
 
+	@DynamoDBAttribute(attributeName = "CARD_NUMBER")
 	public String getCardNumber() {
 		return cardNumber;
 	}
@@ -104,6 +111,7 @@ public class Turn implements Serializable {
 		this.cardNumber = cardNumber;
 	}
 
+	@DynamoDBHashKey(attributeName = "CARD_ID")
 	public Integer getCardId() {
 		return cardId;
 	}
@@ -112,6 +120,7 @@ public class Turn implements Serializable {
 		this.cardId = cardId;
 	}
 
+	@DynamoDBAttribute(attributeName = "AGREEMENT_ID")
 	public Integer getAgreementId() {
 		return agreementId;
 	}
@@ -120,6 +129,7 @@ public class Turn implements Serializable {
 		this.agreementId = agreementId;
 	}
 
+	@DynamoDBAttribute(attributeName = "CARD_START_DT")
 	public String getCardStartDt() {
 		return cardStartDt;
 	}
@@ -128,14 +138,16 @@ public class Turn implements Serializable {
 		this.cardStartDt = startDt;
 	}
 
-	public String getCardFinishDt() {
-		return cardfinishDt;
+	@DynamoDBAttribute(attributeName = "CARD_FINISH_DT")
+	public String getcardFinishDt() {
+		return cardFinishDt;
 	}
 
-	public void setCardFinishDt(String finishDt) {
-		this.cardfinishDt = finishDt;
+	public void setcardFinishDt(String finishDt) {
+		this.cardFinishDt = finishDt;
 	}
 
+	@DynamoDBAttribute(attributeName = "TURN_AMT")
 	public Double getTurnAmt() {
 		return turnAmt;
 	}
@@ -144,6 +156,7 @@ public class Turn implements Serializable {
 		this.turnAmt = turnAmt;
 	}
 
+	@DynamoDBAttribute(attributeName = "MONTH_DT")
 	public String getMonthDt() {
 		return monthDt;
 	}
@@ -154,15 +167,35 @@ public class Turn implements Serializable {
 
 	@Override
 	public String toString() {
-		return cardNumber + ";" + cardId + ";" + agreementId + ";" + cardStartDt + ";" + cardfinishDt + ";" + turnAmt
+		return cardNumber + ";" + cardId + ";" + agreementId + ";" + cardStartDt + ";" + cardFinishDt + ";" + turnAmt
 				+ ";" + monthDt + ";" + authAwsDttm + ";" + clrAwsDttm + ";" + processedDttm + "\n";
 	}
 
+	@DynamoDBAttribute(attributeName = "PROCESSED_DTTM")
 	public String getProcessedDttm() {
 		return processedDttm;
 	}
 
 	public void setProcessedDttm(String processedDttm) {
 		this.processedDttm = processedDttm;
+	}
+
+
+	@DynamoDBAttribute(attributeName = "AUTH_AWS_DTTM")
+	public String getAuthAwsDttm() {
+		return authAwsDttm;
+	}
+
+	public void setAuthAwsDttm(String authAwsDttm) {
+		this.authAwsDttm = authAwsDttm;
+	}
+
+	@DynamoDBAttribute(attributeName = "CLR_AWS_DTTM")
+	public String getClrAwsDttm() {
+		return clrAwsDttm;
+	}
+
+	public void setClrAwsDttm(String clrAwsDttm) {
+		this.clrAwsDttm = clrAwsDttm;
 	}
 }

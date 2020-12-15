@@ -5,6 +5,11 @@ import java.io.Serializable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
+
+@DynamoDBTable(tableName = "BUCKET")
 public class Bucket implements Serializable {
 	private static final Logger log = LoggerFactory.getLogger(Bucket.class);
 	private static final long serialVersionUID = 1L;
@@ -74,6 +79,7 @@ public class Bucket implements Serializable {
 		this.processedDttm = AwsKinesisData.currentTimestamp();
 	}
 
+	@DynamoDBHashKey(attributeName = "CUSTOMER_ID")
 	public Integer getCustomerId() {
 		return customerId;
 	}
@@ -82,6 +88,7 @@ public class Bucket implements Serializable {
 		this.customerId = customerId;
 	}
 
+	@DynamoDBAttribute(attributeName = "MONTH_DT")
 	public String getMonthDt() {
 		return monthDt;
 	}
@@ -90,6 +97,7 @@ public class Bucket implements Serializable {
 		this.monthDt = monthDt;
 	}
 
+	@DynamoDBAttribute(attributeName = "CUSTOMER_TURN_AMT")
 	public Double getCustomerTurnAmt() {
 		return customerTurnAmt;
 	}
@@ -100,9 +108,11 @@ public class Bucket implements Serializable {
 
 	@Override
 	public String toString() {
-		return customerId + ";" + monthDt + ";" + customerTurnAmt + ";" + authAwsDttm + ";" + clrAwsDttm + ";" + processedDttm + "\n";
+		return customerId + ";" + monthDt + ";" + customerTurnAmt + ";" + authAwsDttm + ";" + clrAwsDttm + ";"
+				+ processedDttm + "\n";
 	}
 
+	@DynamoDBAttribute(attributeName = "PROCESSED_DTTM")
 	public String getProcessedDttm() {
 		return processedDttm;
 	}
@@ -111,6 +121,7 @@ public class Bucket implements Serializable {
 		this.processedDttm = processedDttm;
 	}
 
+	@DynamoDBAttribute(attributeName = "AUTH_AWS_DTTM")
 	public String getAuthAwsDttm() {
 		return authAwsDttm;
 	}
@@ -119,6 +130,7 @@ public class Bucket implements Serializable {
 		this.authAwsDttm = authAwsDttm;
 	}
 
+	@DynamoDBAttribute(attributeName = "CLR_AWS_DTTM")
 	public String getClrAwsDttm() {
 		return clrAwsDttm;
 	}

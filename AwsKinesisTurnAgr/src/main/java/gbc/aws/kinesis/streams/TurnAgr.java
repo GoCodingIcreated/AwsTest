@@ -2,21 +2,19 @@ package gbc.aws.kinesis.streams;
 
 import java.util.Properties;
 
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
-import org.apache.flink.api.common.state.MapState;
-import org.apache.flink.api.common.state.MapStateDescriptor;
-import org.apache.flink.configuration.Configuration;
-import org.apache.flink.streaming.api.TimerService;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
-import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisConsumer;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisProducer;
 import org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConstants;
-import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 
 import gbc.aws.kinesis.schemas.AwsKinesisData;
 import gbc.aws.kinesis.schemas.TransactionXCard;
@@ -26,6 +24,7 @@ public class TurnAgr {
 
 	private static final Logger log = LoggerFactory.getLogger(TurnAgr.class);
 
+	private static final AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
 	private static final String region = "us-east-1";
 	private static final String inputStreamName = "TRAN_X_CARD";
 	private static final String outputStreamName = "TURN";
@@ -60,75 +59,36 @@ public class TurnAgr {
 
 		DataStream<String> turn = createSourceFromStaticConfig(env);
 
-		turn.keyBy((value) -> {
-			TransactionXCard trn = new TransactionXCard(value);
-			log.info("Got key value: " + trn.getCardId());
-			return trn.getCardId();
-		}).process(new PseudoWindow(Time.days(30))).addSink(createSinkFromStaticConfig());
+		turn.map(new MapFunction<String, String>() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public String map(String value) {
+				log.info("Map_1_turn: Got value: " + value);
+				TransactionXCard tranXCardRec = new TransactionXCard(value);
+				DynamoDBMapper mapper = new DynamoDBMapper(client);
+				
+				try {
+
+					Turn turnAgg = mapper.load(Turn.class, tranXCardRec.getCardId());
+					Turn turnResult = new Turn(turnAgg, tranXCardRec);
+
+					log.info("Map_1_turn: Collected value: " + value + ", tranXCardRec: " + tranXCardRec + ", turnAgg: "
+							+ turnAgg + ", turnResult: " + turnResult);
+					mapper.save(turnResult);
+					return turnResult.toString();
+				} catch (Exception ex) {
+					log.info("Map_1_turn exception: ", ex);
+					Turn turnResult = new Turn(tranXCardRec, 0.0, "2020-12-01");
+					log.info("Map_1_turn: value: " + value + ", tranXCardRec: " + tranXCardRec + ", turnResult: "
+							+ turnResult);
+					mapper.save(turnResult);
+					return turnResult.toString();
+				}
+			}
+		}).addSink(createSinkFromStaticConfig());
 
 		env.execute("TurnAgr v 1.0.0.");
 	}
-
-	public static class PseudoWindow extends KeyedProcessFunction<Integer, String, String> {
-
-		private static final long serialVersionUID = 1L;
-		private final long durationMsec;
-
-		public PseudoWindow(Time duration) {
-			this.durationMsec = duration.toMilliseconds();
-		}
-
-		private transient MapState<Integer, Double> sumOfTransaction;
-
-		@Override
-		public void open(Configuration conf) {
-			MapStateDescriptor<Integer, Double> sumDesc = new MapStateDescriptor<>("sumOfTransaction", Integer.class,
-					Double.class);
-			sumOfTransaction = getRuntimeContext().getMapState(sumDesc);
-		}
-
-		@Override
-		public void processElement(String record, Context ctx, Collector<String> out) throws Exception {
-			TransactionXCard trn = new TransactionXCard(record);
-			long eventTime = System.currentTimeMillis();
-			TimerService timerService = ctx.timerService();
-
-			if (eventTime <= timerService.currentWatermark()) {
-				// This event is late; its window has already been triggered.
-			} else {
-
-				long endOfWindow = (eventTime - (eventTime % durationMsec) + durationMsec - 1);
-
-				timerService.registerProcessingTimeTimer(endOfWindow);
-
-				Integer stateKey = trn.getCardId();
-				Double sum = sumOfTransaction.get(stateKey);
-				if (sum == null) {
-					sum = 0.0;
-				}
-				log.info("Got: record: " + record + ", sum: " + sum + ", trn.getTransactionAmt: " + trn.getTransactionAmt() + ", trn: " + trn);
-				
-				sum += trn.getTransactionAmt();
-				sumOfTransaction.put(stateKey, sum);
-				Turn result = new Turn(trn, sum, "2020-11-01");
-				log.info("Got timers: eventTime: " + eventTime + " endOfWindow: " + endOfWindow + " currentWatermark: "
-						+ timerService.currentWatermark());
-				log.info("Got result: " + stateKey + ":" + sum);
-				log.info("Turn: " + result);
-
-				out.collect(result.toString());
-			}
-		}
-
-		@Override
-		public void onTimer(long timestamp, OnTimerContext context, Collector<String> out) throws Exception {
-
-			Integer key = context.getCurrentKey();
-			log.info("PseudoWindow timer expired! Key: " + key);
-			this.sumOfTransaction.clear();
-
-		}
-	}
-
 
 }

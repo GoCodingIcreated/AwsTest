@@ -146,4 +146,24 @@ public class TurnXAgr extends Turn implements Serializable {
 				+ plannedFinishDt + ";" + factFinishDt + ";" + processedDttm + "\n";
 	}
 
+
+	public String getPlannedFinishDt() {
+		return plannedFinishDt;
+	}
+
+
+	public void setPlannedFinishDt(String plannedFinishDt) {
+		this.plannedFinishDt = plannedFinishDt;
+	}
+
+
+	public String getProcessedDttm() {
+		return processedDttm;
+	}
+
+
+	public void setProcessedDttm(String processedDttm) {
+		this.processedDttm = processedDttm;
+	}
+
 }

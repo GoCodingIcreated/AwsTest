@@ -2,22 +2,19 @@ package gbc.aws.kinesis.streams;
 
 import java.util.Properties;
 
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
-import org.apache.flink.api.common.state.MapState;
-import org.apache.flink.api.common.state.MapStateDescriptor;
-import org.apache.flink.configuration.Configuration;
-import org.apache.flink.streaming.api.TimerService;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
-import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisConsumer;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisProducer;
 import org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConstants;
-import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 
 import gbc.aws.kinesis.schemas.AwsKinesisData;
 import gbc.aws.kinesis.schemas.Bucket;
@@ -32,6 +29,7 @@ public class BucketAgr {
 	private static final String outputStreamName = "BUCKET";
 	private static final String aws_access_key_id = AwsKinesisData.getAwsAccessKeyId();
 	private static final String aws_secret_access_key = AwsKinesisData.getAwsSecretAccessKey();
+	private static final AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
 
 	private static DataStream<String> createSourceFromStaticConfig(StreamExecutionEnvironment env) {
 		Properties inputProperties = new Properties();
@@ -62,75 +60,35 @@ public class BucketAgr {
 
 		DataStream<String> turnXAgrXProd = createSourceFromStaticConfig(env);
 
-		turnXAgrXProd.keyBy((value) -> {
-			TurnXAgrXProd turn = new TurnXAgrXProd(value);
-			log.info("Got key value: " + turn.getCustomerId());
-			return turn.getCustomerId();
-		}).process(new PseudoWindow(Time.days(30))).addSink(createSinkFromStaticConfig());
+		turnXAgrXProd.map(new MapFunction<String, String>() {
+			private static final long serialVersionUID = 1L;
 
-		env.execute("Flink Streaming Java API Skeleton");
-	}
+			@Override
+			public String map(String value) {
+				log.info("Map_1_turnXAgrXProd: Got value: " + value);
+				TurnXAgrXProd turnXAgrXProdRec = new TurnXAgrXProd(value);
+				DynamoDBMapper mapper = new DynamoDBMapper(client);				
+				try {
 
-	public static class PseudoWindow extends KeyedProcessFunction<Integer, String, String> {
+					Bucket bucketAgg = mapper.load(Bucket.class, turnXAgrXProdRec.getCustomerId());
+					Bucket bucketResult = new Bucket(bucketAgg, turnXAgrXProdRec);
 
-		private static final long serialVersionUID = 1L;
-		private final long durationMsec;
-
-		public PseudoWindow(Time duration) {
-			this.durationMsec = duration.toMilliseconds();
-		}
-
-		private transient MapState<Integer, Double> sumOfTransaction;
-
-		@Override
-		public void open(Configuration conf) {
-			MapStateDescriptor<Integer, Double> sumDesc = new MapStateDescriptor<>("sumOfTransaction", Integer.class,
-					Double.class);
-			sumOfTransaction = getRuntimeContext().getMapState(sumDesc);
-		}
-
-		@Override
-		public void processElement(String record, Context ctx, Collector<String> out) throws Exception {
-			TurnXAgrXProd turn = new TurnXAgrXProd(record);
-			long eventTime = System.currentTimeMillis();
-			TimerService timerService = ctx.timerService();
-
-			if (eventTime <= timerService.currentWatermark()) {
-				// This event is late; its window has already been triggered.
-			} else {
-
-				long endOfWindow = (eventTime - (eventTime % durationMsec) + durationMsec - 1);
-
-				timerService.registerProcessingTimeTimer(endOfWindow);
-
-				Integer stateKey = turn.getCustomerId();
-				Double sum = sumOfTransaction.get(stateKey);
-				if (sum == null) {
-					sum = 0.0;
+					log.info("Map_1_turnXAgrXProd: Collected value: " + value + ", turnXAgrXProdRec: "
+							+ turnXAgrXProdRec + ", bucketAgg: " + bucketAgg + ", bucketResult: " + bucketResult);
+					mapper.save(bucketResult);
+					return bucketResult.toString();					
+				} catch (Exception ex) {
+					log.info("Map_1_turnXAgrXProd exception: ", ex);
+					Bucket bucketResult = new Bucket(turnXAgrXProdRec);
+					log.info("Map_1_turnXAgrXProd: value: " + value + ", turnXAgrXProdRec: " + turnXAgrXProdRec
+							+ ", bucketResult: " + bucketResult);
+					mapper.save(bucketResult);
+					return bucketResult.toString();
 				}
-				sum += turn.getTurnAmt();
-				sumOfTransaction.put(stateKey, sum);
-				Bucket result = new Bucket(turn);
-				log.info("Got timers: eventTime: " + eventTime + " endOfWindow: " + endOfWindow + " currentWatermark: "
-						+ timerService.currentWatermark());
-				log.info("Got result: CustomerId: " + stateKey + " getTurnAmt: " + sum);
-				log.info("Bucket: " + result);
-				out.collect(result.toString());
 			}
-		}
+		}).addSink(createSinkFromStaticConfig());
 
-		@Override
-		public void onTimer(long timestamp, OnTimerContext context, Collector<String> out) throws Exception {
-
-			Integer key = context.getCurrentKey();
-			log.info("PseudoWindow timer expired! Key: " + key);
-			// Look up the result for the hour that just ended.
-//		    Double sumOfTransaction = this.sumOfTransaction.get(key);
-
-			Bucket result = new Bucket();
-			out.collect(result.toString());
-			this.sumOfTransaction.clear();
-
-		}
+		env.execute("BucketAgr v.1.0.0");
 	}
+
 }

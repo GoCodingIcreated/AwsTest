@@ -16,6 +16,9 @@ public class AuthorizationXType extends Authorization implements Serializable {
 	protected String authorizationTypeNm;	
 	private String processedDttm;
 
+	
+	
+	@DynamoDBAttribute(attributeName = "AUTHORIZATION_TYPE_NM")	
 	public String getAuthorizationTypeNm() {
 		return authorizationTypeNm;
 	}
@@ -111,6 +114,13 @@ public class AuthorizationXType extends Authorization implements Serializable {
 	}
 
 	@Override
+	@DynamoDBAttribute(attributeName = "AWS_DTTM")
+	public String getAwsDttm() {
+		return awsDttm;
+	}
+	
+	
+	@Override
 	@DynamoDBAttribute(attributeName = "PROCESSED_DTTM")
 	public String getProcessedDttm() {
 		return processedDttm;
@@ -119,5 +129,7 @@ public class AuthorizationXType extends Authorization implements Serializable {
 	public void setProcessedDttm(String processedDttm) {
 		this.processedDttm = processedDttm;
 	}
+	
+	
 
 }
