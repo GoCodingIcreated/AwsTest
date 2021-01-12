@@ -11,7 +11,6 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction;
-import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisConsumer;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisProducer;
 import org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConstants;
@@ -163,7 +162,7 @@ public class FullChain {
 		(value) -> {
 			return value.getClearingId();
 		}).process(new TransactionWindow());
-
+		
 		return trn;
 	}
 
@@ -359,6 +358,7 @@ public class FullChain {
 		DataStream<String> bucketXCustomer = step8(bucket);
 		bucketXCustomer.addSink(createSinkFromStaticConfig(outputStreamNameStep8));
 
+		//env.disableOperatorChaining();
 		env.execute("FullChain v.1.0.0.");
 	}
 
