@@ -332,28 +332,28 @@ public class FullChain {
 		DataStream<String> clr = createSourceClearingFromStaticConfig(env);
 
 		DataStream<AuthorizationXType> authXType = step1a(auth);
-		sinkStep(authXType, outputStreamNameStep1a);
+//		sinkStep(authXType, outputStreamNameStep1a);
 
 		DataStream<ClearingXType> clrXType = step1b(clr);
-		sinkStep(clrXType, outputStreamNameStep1b);
+//		sinkStep(clrXType, outputStreamNameStep1b);
 
 		DataStream<Transaction> trn = step2(authXType, clrXType);
-		sinkStep(trn, outputStreamNameStep2);
+//		sinkStep(trn, outputStreamNameStep2);
 
 		DataStream<TransactionXCard> trnXCard = step3(trn);
-		sinkStep(trnXCard, outputStreamNameStep3);
+//		sinkStep(trnXCard, outputStreamNameStep3);
 
 		DataStream<Turn> turn = step4(trnXCard);
-		sinkStep(turn, outputStreamNameStep4);
+//		sinkStep(turn, outputStreamNameStep4);
 
 		DataStream<TurnXAgr> turnXAgr = step5(turn);
-		sinkStep(turnXAgr, outputStreamNameStep5);
+//		sinkStep(turnXAgr, outputStreamNameStep5);
 
 		DataStream<TurnXAgrXProd> turnXAgrXProd = step6(turnXAgr);
-		sinkStep(turnXAgrXProd, outputStreamNameStep6);
+//		sinkStep(turnXAgrXProd, outputStreamNameStep6);
 
 		DataStream<Bucket> bucket = step7(turnXAgrXProd);
-		sinkStep(bucket, outputStreamNameStep7);
+//		sinkStep(bucket, outputStreamNameStep7);
 
 		DataStream<String> bucketXCustomer = step8(bucket);
 		bucketXCustomer.addSink(createSinkFromStaticConfig(outputStreamNameStep8));
