@@ -2,7 +2,6 @@ package gbc.aws.kinesis.streams;
 
 import java.util.Properties;
 
-import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.common.state.MapState;
@@ -368,6 +367,7 @@ public class FullChain {
 
 		DataStream<Bucket> bucket = step7(turnXAgrXProd);
 		//sinkStep(bucket, outputStreamNameStep7);
+
 
 		DataStream<String> bucketXCustomer = step8(bucket);
 		bucketXCustomer.addSink(createSinkFromStaticConfig(outputStreamNameStep8));
