@@ -40,6 +40,9 @@ import gbc.aws.kinesis.schemas.Turn;
 import gbc.aws.kinesis.schemas.TurnXAgr;
 import gbc.aws.kinesis.schemas.TurnXAgrXProd;
 
+import org.apache.flink.table.api.java.StreamTableEnvironment;
+import org.apache.flink.table.api.TableEnvironment;
+
 public class FullChain {
 
 	private static final Logger log = LoggerFactory.getLogger(FullChain.class);
