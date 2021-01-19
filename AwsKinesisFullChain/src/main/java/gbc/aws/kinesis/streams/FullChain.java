@@ -69,7 +69,7 @@ public class FullChain {
 		inputProperties.setProperty(ConsumerConfigConstants.AWS_SECRET_ACCESS_KEY, aws_secret_access_key);
 		inputProperties.setProperty(ConsumerConfigConstants.STREAM_INITIAL_POSITION, "LATEST");
 
-		return env.addSource(new FlinkKinesisConsumer<>(inputStreamName1, new SimpleStringSchema(), inputProperties));
+		return env.addSource(new FlinkKinesisConsumer<>(inputStreamName1, new SimpleStringSchema(), inputProperties)).rebalance();
 	}
 
 	private static DataStream<String> createSourceClearingFromStaticConfig(StreamExecutionEnvironment env) {
@@ -79,7 +79,7 @@ public class FullChain {
 		inputProperties.setProperty(ConsumerConfigConstants.AWS_SECRET_ACCESS_KEY, aws_secret_access_key);
 		inputProperties.setProperty(ConsumerConfigConstants.STREAM_INITIAL_POSITION, "LATEST");
 
-		return env.addSource(new FlinkKinesisConsumer<>(inputStreamName2, new SimpleStringSchema(), inputProperties));
+		return env.addSource(new FlinkKinesisConsumer<>(inputStreamName2, new SimpleStringSchema(), inputProperties)).rebalance();
 	}
 
 	private static FlinkKinesisProducer<String> createSinkFromStaticConfig(String streamName) {
@@ -97,12 +97,11 @@ public class FullChain {
 	}
 
 	public static DataStream<AuthorizationXType> step1a(DataStream<String> input) {
-		DataStream<AuthorizationXType> auth = input.flatMap(new FlatMapFunction<String, AuthorizationXType>() {
+		DataStream<AuthorizationXType> auth = input.map(new MapFunction<String, AuthorizationXType>() {
 			private static final long serialVersionUID = 1L;
 
 			@Override
-			public void flatMap(String value, Collector<AuthorizationXType> out) throws Exception {
-				log.info("Map_1: Got value: " + value);
+			public AuthorizationXType map(String value) throws Exception {
 				Authorization authRec = new Authorization(value, ";", true);
 				try {
 
@@ -111,17 +110,14 @@ public class FullChain {
 					AuthorizationXType authWithType = new AuthorizationXType(authRec,
 							authType.getAuthorizationTypeNm());
 
-					log.info("Map_1: Collected value: " + value + ", authRec: " + authRec + ", authType: " + authType
-							+ ", authWithType: " + authWithType + ", AuthorizationTypeNm: "
-							+ authWithType.getAuthorizationTypeNm());
-					out.collect(authWithType);
+					return authWithType;
 				} catch (Exception ex) {
-					log.error("Map_1 exception: ", ex);
-					AuthorizationXType authWithType = new AuthorizationXType(authRec, new AuthorizationType());
-					log.error("Map_1: value: " + value + ", authRec: " + authRec + ", authWithType: " + authWithType);
-					out.collect(authWithType);
+					AuthorizationXType authWithType = new AuthorizationXType(authRec, "");
+					return authWithType;
 				}
 			}
+			
+	
 		});
 
 		return auth;
@@ -138,14 +134,9 @@ public class FullChain {
 				try {
 					ClearingType clrType = mapper.load(ClearingType.class, clrRec.getClearingTypeId());
 					ClearingXType clrWithType = new ClearingXType(clrRec, clrType.getClearingTypeNm());
-					log.info("Map 1: Value: " + value + ", clrRec: " + clrRec + ", clrType: " + clrType
-							+ ", clrWithType: " + clrWithType);
 					return clrWithType;
 				} catch (Exception ex) {
-					log.error("Map_1 exception: ", ex);
 					ClearingXType clrWithType = new ClearingXType(clrRec, "");
-					log.error("Map 1: Value: " + value + ", clrRec: " + clrRec + ", clrType: null, clrWithType: "
-							+ clrWithType);
 					return clrWithType;
 				}
 
@@ -155,6 +146,7 @@ public class FullChain {
 	}
 
 	public static DataStream<Transaction> step2(DataStream<AuthorizationXType> authXType, DataStream<ClearingXType> clrXType) {
+		
 		DataStream<Transaction> trn = authXType.connect(clrXType)
 		.keyBy((value) -> {
 			return value.getAuthorizationId();
@@ -162,7 +154,29 @@ public class FullChain {
 		(value) -> {
 			return value.getClearingId();
 		}).process(new TransactionWindow());
+		/*
+		DataStream<Transaction> auth = authXType.map(new MapFunction<AuthorizationXType, Transaction>() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public Transaction map(AuthorizationXType tranXCardRec) {
+				return new Transaction(tranXCardRec, new ClearingXType());
+			}
+		}).rebalance();
 		
+		
+		DataStream<Transaction> clr = clrXType.map(new MapFunction<ClearingXType, Transaction>() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public Transaction map(ClearingXType tranXCardRec) {
+				return new Transaction(new AuthorizationXType(), tranXCardRec);
+			}
+		}).rebalance();
+		DataStream<Transaction> trn = auth.union(clr);
+		
+		// .rescale(), .rebalance()
+		*/
 		return trn;
 	}
 
@@ -177,12 +191,12 @@ public class FullChain {
 					// Transaction trn = new Transaction(trnStr);
 					Card card = mapper.load(Card.class, trn.getCardId());
 					TransactionXCard trnXCard = new TransactionXCard(trn, card);
-					log.info("Map_1: trn: " + trn + ", card: " + card + ", transXCard: " + trnXCard);
+					//log.info("Map_1: trn: " + trn + ", card: " + card + ", transXCard: " + trnXCard);
 					return trnXCard;
 				} catch (Exception ex) {
-					log.error("Map_1 exception: ", ex);
+					//log.error("Map_1 exception: ", ex);
 					TransactionXCard trnXCard = new TransactionXCard(trn, new Card());
-					log.error("Map_1: trn: " + trn + ", trnXCard: " + trnXCard + ", card: null");
+					//log.error("Map_1: trn: " + trn + ", trnXCard: " + trnXCard + ", card: null");
 					return trnXCard;
 				}
 			}
@@ -229,13 +243,13 @@ public class FullChain {
 			try {
 				Agreement agr = mapper.load(Agreement.class, turn.getAgreementId());
 				TurnXAgr turnXAgr = new TurnXAgr(turn, agr);
-				log.info("Map 1: turn: " + turn + ", agr: " + agr + ", turnXAgr: " + turnXAgr);
+				//log.info("Map 1: turn: " + turn + ", agr: " + agr + ", turnXAgr: " + turnXAgr);
 				return turnXAgr;
 			} catch (Exception ex) {
-				log.error("Map_1: exception: ", ex);
+				//log.error("Map_1: exception: ", ex);
 				Agreement agr = new Agreement();
 				TurnXAgr turnXAgr = new TurnXAgr(turn, agr);
-				log.error("Map 1: turn: " + turn + ", agr: " + agr + ", turnXAgr: " + turnXAgr);
+				//log.error("Map 1: turn: " + turn + ", agr: " + agr + ", turnXAgr: " + turnXAgr);
 				return turnXAgr;
 			}
 
@@ -250,13 +264,13 @@ public class FullChain {
 			try {
 				Product prod = mapper.load(Product.class, turnXAgr.getAgreementId());
 				TurnXAgrXProd turnXAgrXProd = new TurnXAgrXProd(turnXAgr, prod);
-				log.info("Map 1: turnXAgr: " + turnXAgr + ", prod: " + prod + ", turnXAgrXProd: " + turnXAgrXProd);
+				//log.info("Map 1: turnXAgr: " + turnXAgr + ", prod: " + prod + ", turnXAgrXProd: " + turnXAgrXProd);
 				return turnXAgrXProd;
 			} catch (Exception ex) {
-				log.error("Map_1 exception: ", ex);
+				//log.error("Map_1 exception: ", ex);
 				Product prod = new Product();
 				TurnXAgrXProd turnXAgrXProd = new TurnXAgrXProd(turnXAgr, prod);
-				log.error("Map 1: turnXAgr: " + turnXAgr + ", prod: " + prod + ", turnXAgrXProd: " + turnXAgrXProd);
+				//log.error("Map 1: turnXAgr: " + turnXAgr + ", prod: " + prod + ", turnXAgrXProd: " + turnXAgrXProd);
 				return turnXAgrXProd;
 			}
 		});
@@ -305,13 +319,13 @@ public class FullChain {
 			try {
 				Customer customer = mapper.load(Customer.class, bucket.getCustomerId());
 				BucketXCustomer bucketXCust = new BucketXCustomer(bucket, customer);
-				log.info("Map_1: bucket: " + bucket + ", customer: " + customer + ", bucketXCust: " + bucketXCust);
+				//log.info("Map_1: bucket: " + bucket + ", customer: " + customer + ", bucketXCust: " + bucketXCust);
 				return bucketXCust.toString();
 			} catch (Exception ex) {
-				log.error("Map_1 exception: ", ex);
+				//log.error("Map_1 exception: ", ex);
 				Customer customer = new Customer();
 				BucketXCustomer bucketXCust = new BucketXCustomer(bucket, customer);
-				log.error("Map_1: bucket: " + bucket + ", customer: " + customer + ", bucketXCust: " + bucketXCust);
+				//log.error("Map_1: bucket: " + bucket + ", customer: " + customer + ", bucketXCust: " + bucketXCust);
 				return bucketXCust.toString();
 			}
 		});
@@ -332,28 +346,28 @@ public class FullChain {
 		DataStream<String> clr = createSourceClearingFromStaticConfig(env);
 
 		DataStream<AuthorizationXType> authXType = step1a(auth);
-		sinkStep(authXType, outputStreamNameStep1a);
+		//sinkStep(authXType, outputStreamNameStep1a);
 
 		DataStream<ClearingXType> clrXType = step1b(clr);
-		sinkStep(clrXType, outputStreamNameStep1b);
+		//sinkStep(clrXType, outputStreamNameStep1b);
 
 		DataStream<Transaction> trn = step2(authXType, clrXType);
-		sinkStep(trn, outputStreamNameStep2);
+		//sinkStep(trn, outputStreamNameStep2);
 
 		DataStream<TransactionXCard> trnXCard = step3(trn);
-		sinkStep(trnXCard, outputStreamNameStep3);
+		//sinkStep(trnXCard, outputStreamNameStep3);
 
 		DataStream<Turn> turn = step4(trnXCard);
-		sinkStep(turn, outputStreamNameStep4);
+		//sinkStep(turn, outputStreamNameStep4);
 
-		DataStream<TurnXAgr> turnXAgr = step5(turn);
-		sinkStep(turnXAgr, outputStreamNameStep5);
+		DataStream<TurnXAgr> turnXAgr = step5(turn).rebalance();
+		//sinkStep(turnXAgr, outputStreamNameStep5);
 
 		DataStream<TurnXAgrXProd> turnXAgrXProd = step6(turnXAgr);
-		sinkStep(turnXAgrXProd, outputStreamNameStep6);
+		//sinkStep(turnXAgrXProd, outputStreamNameStep6);
 
 		DataStream<Bucket> bucket = step7(turnXAgrXProd);
-		sinkStep(bucket, outputStreamNameStep7);
+		//sinkStep(bucket, outputStreamNameStep7);
 
 		DataStream<String> bucketXCustomer = step8(bucket);
 		bucketXCustomer.addSink(createSinkFromStaticConfig(outputStreamNameStep8));
@@ -385,7 +399,8 @@ public class FullChain {
 
 		@Override
 		public void processElement1(AuthorizationXType auth, Context ctx, Collector<Transaction> out) throws Exception {
-
+			//Transaction tran = new Transaction(auth, new ClearingXType());
+			
 			Integer stateKey = auth.getAuthorizationId();
 			ClearingXType rec = clrState.get(stateKey);
 			Transaction tran = null;
@@ -395,7 +410,7 @@ public class FullChain {
 			} else {
 				tran = new Transaction(auth, new ClearingXType(rec));
 			}
-
+			
 			// log.info("Got result: " + stateKey + ":" + rec);
 			// log.info("Transaction: " + tran);
 
@@ -404,7 +419,8 @@ public class FullChain {
 
 		@Override
 		public void processElement2(ClearingXType clr, Context ctx, Collector<Transaction> out) throws Exception {
-
+			//Transaction tran = new Transaction(new AuthorizationXType(), clr);
+			
 			Integer stateKey = clr.getAuthorizationId();
 			AuthorizationXType rec = authState.get(stateKey);
 			Transaction tran = null;
@@ -414,7 +430,7 @@ public class FullChain {
 			} else {
 				tran = new Transaction(new AuthorizationXType(rec), clr);
 			}
-
+			
 			// log.info("Got result: " + stateKey + ":" + rec);
 			// log.info("Transaction: " + tran);
 
