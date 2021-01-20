@@ -13,6 +13,8 @@ import org.apache.flink.streaming.api.functions.co.CoProcessFunction;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisConsumer;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisProducer;
 import org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConstants;
+import org.apache.flink.table.api.Table;
+import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,8 +42,7 @@ import gbc.aws.kinesis.schemas.Turn;
 import gbc.aws.kinesis.schemas.TurnXAgr;
 import gbc.aws.kinesis.schemas.TurnXAgrXProd;
 
-import org.apache.flink.table.api.java.StreamTableEnvironment;
-import org.apache.flink.table.api.TableEnvironment;
+
 
 public class FullChain {
 
@@ -343,18 +344,54 @@ public class FullChain {
 
 	public static void main(String[] args) throws Exception {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-
+		
+		StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
+		
+		
 		DataStream<String> auth = createSourceAuthorizationFromStaticConfig(env);
 		DataStream<String> clr = createSourceClearingFromStaticConfig(env);
 
 		DataStream<AuthorizationXType> authXType = step1a(auth);
-		//sinkStep(authXType, outputStreamNameStep1a);
+		sinkStep(authXType, outputStreamNameStep1a);
 
 		DataStream<ClearingXType> clrXType = step1b(clr);
-		//sinkStep(clrXType, outputStreamNameStep1b);
+		sinkStep(clrXType, outputStreamNameStep1b);
 
-		DataStream<Transaction> trn = step2(authXType, clrXType);
-		//sinkStep(trn, outputStreamNameStep2);
+		Table authTable = tableEnv
+			    .fromDataStream(authXType, "authorizationId, authorizationTypeId, authorizationAmt, cardId, authorizationDttm, awsDttm, processedDttm, authorizationTypeNm");
+		Table clrTable = tableEnv
+			    .fromDataStream(clrXType, "clearingId, clearingTypeId, authorizationId, clearingAmt, cardId, clearingDttm, awsDttm, processedDttm, clearingTypeNm");
+		tableEnv.registerTable("Authorizations", authTable);
+	    tableEnv.registerTable("Clearings", clrTable);
+        Table resultTable = tableEnv.sqlQuery("SELECT " + 
+        		"	clr.clearingId as transactionId,\r\n" + 
+        		"	clr.clearingId,\r\n" + 
+        		"	clr.clearingTypeId,\r\n" + 
+        		"	coalesce(clr.authorizationId, auth.authorizationId) as authorizationId,\r\n" + 
+        		"	clr.clearingAmt,\r\n" + 
+        		"	coalesce(clr.cardId, auth.cardId) as cardId,\r\n" + 
+        		"	clr.clearingDttm,\r\n" + 
+        		"	clr.clearingTypeNm,\r\n" + 
+        		"	auth.authorizationTypeId,\r\n" + 
+        		"	auth.authorizationAmt,\r\n" + 
+        		"	auth.authorizationDttm,\r\n" + 
+        		"	auth.authorizationTypeNm,\r\n" + 
+        		"	coalesce(clr.clearingAmt, auth.authorizationAmt) as transactionAmt,\r\n" + 
+        		"	clr.awsDttm as clrAwsDttm,\r\n" + 
+        		"	auth.awsDttm as authAwsDttm,\r\n" + 
+        		"	coalesce(clr.processedDttm, auth.processedDttm) as processedDttm \r\n" + 
+        		"FROM\r\n" + 
+        		"	Authorizations auth \r\n" + 
+        		"FULL JOIN\r\n" + 
+        		"	Clearings clr ON \r\n" + 
+        		"auth.authorizationId = clr.authorizationId"
+        );
+
+        //Convert the Dynamic Table to a DataStream
+        DataStream<Transaction> trn = tableEnv.toAppendStream(resultTable,Transaction.class);
+	    
+		//DataStream<Transaction> trn = step2(authXType, clrXType);
+		sinkStep(trn, outputStreamNameStep2);
 
 		DataStream<TransactionXCard> trnXCard = step3(trn);
 		//sinkStep(trnXCard, outputStreamNameStep3);
