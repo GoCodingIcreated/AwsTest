@@ -14,7 +14,7 @@ import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisConsumer;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisProducer;
 import org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConstants;
 import org.apache.flink.table.api.Table;
-import org.apache.flink.table.api.java.StreamTableEnvironment;
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -356,14 +356,14 @@ public class FullChain {
 
 		DataStream<ClearingXType> clrXType = step1b(clr);
 		sinkStep(clrXType, outputStreamNameStep1b);
-
+		
 		Table authTable = tableEnv
 			    .fromDataStream(authXType, "authorizationId, authorizationTypeId, authorizationAmt, cardId, authorizationDttm, awsDttm, processedDttm, authorizationTypeNm");
 		Table clrTable = tableEnv
 			    .fromDataStream(clrXType, "clearingId, clearingTypeId, authorizationId, clearingAmt, cardId, clearingDttm, awsDttm, processedDttm, clearingTypeNm");
 		tableEnv.registerTable("Authorizations", authTable);
 	    tableEnv.registerTable("Clearings", clrTable);
-        Table resultTable = tableEnv.sqlQuery("SELECT " + 
+	    String query = "SELECT " + 
         		"	clr.clearingId as transactionId,\r\n" + 
         		"	clr.clearingId,\r\n" + 
         		"	clr.clearingTypeId,\r\n" + 
@@ -384,15 +384,19 @@ public class FullChain {
         		"	Authorizations auth \r\n" + 
         		"FULL JOIN\r\n" + 
         		"	Clearings clr ON \r\n" + 
-        		"auth.authorizationId = clr.authorizationId"
-        );
+        		"auth.authorizationId = clr.authorizationId";
+        query = "SELECT " + 
+                		"	clr.clearingId as transactionId " +         		
+                		"	FROM Clearings clr ";
+        Table resultTable = tableEnv.sqlQuery(query);
 
         //Convert the Dynamic Table to a DataStream
-        DataStream<Transaction> trn = tableEnv.toAppendStream(resultTable,Transaction.class);
+        DataStream<Transaction> trn = tableEnv.toAppendStream(resultTable, Transaction.class);
+        //DataStream<Transaction> trn = tableEnv.toAppendStream(resultTable,Transaction.class);
 	    
 		//DataStream<Transaction> trn = step2(authXType, clrXType);
 		sinkStep(trn, outputStreamNameStep2);
-
+		/*
 		DataStream<TransactionXCard> trnXCard = step3(trn);
 		//sinkStep(trnXCard, outputStreamNameStep3);
 
@@ -413,6 +417,8 @@ public class FullChain {
 		bucketXCustomer.addSink(createSinkFromStaticConfig(outputStreamNameStep8));
 
 		//env.disableOperatorChaining();
+		
+		 */
 		env.execute("FullChain v.1.0.0.");
 	}
 
