@@ -1,8 +1,10 @@
 package gbc.aws.kinesis.streams;
 
+import java.util.Collection;
 import java.util.Properties;
 
 import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
@@ -357,7 +359,7 @@ public class FullChain {
 
 		DataStream<ClearingXType> clrXType = step1b(clr);
 		sinkStep(clrXType, outputStreamNameStep1b);
-		
+		/*
 		Table authTable = tableEnv
 			    .fromDataStream(authXType, "authorizationId, authorizationTypeId, authorizationAmt, cardId, authorizationDttm, awsDttm, processedDttm, authorizationTypeNm");
 		Table clrTable = tableEnv
@@ -392,11 +394,23 @@ public class FullChain {
         Table resultTable = tableEnv.sqlQuery(query);
 
         //Convert the Dynamic Table to a DataStream
-        DataStream<Tuple2<Boolean, Transaction>> trn = tableEnv.toRetractStream(resultTable, Transaction.class);
+        DataStream<Transaction> trn = tableEnv.toRetractStream(resultTable, Transaction.class)
+                .flatMap(new FlatMapFunction<Tuple2<Boolean, Transaction>, Transaction>() {
+                    private static final long serialVersionUID = 1L;
+
+                    @Override
+                    public void flatMap(Tuple2<Boolean, Transaction> trn, Collector<Transaction> out) {
+                        if (trn.f0) {
+                            out.collect(trn.f1);
+                        }
+                    }
+                });
+        */
         //DataStream<Transaction> trn = tableEnv.toAppendStream(resultTable,Transaction.class);
 	    
 		//DataStream<Transaction> trn = step2(authXType, clrXType);
-		sinkStep(trn, outputStreamNameStep2);
+		
+        //sinkStep(trn, outputStreamNameStep2);
 		/*
 		DataStream<TransactionXCard> trnXCard = step3(trn);
 		//sinkStep(trnXCard, outputStreamNameStep3);
