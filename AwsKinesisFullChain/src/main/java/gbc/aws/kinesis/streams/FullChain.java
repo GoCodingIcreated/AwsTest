@@ -6,6 +6,7 @@ import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -385,13 +386,13 @@ public class FullChain {
         		"FULL JOIN\r\n" + 
         		"	Clearings clr ON \r\n" + 
         		"auth.authorizationId = clr.authorizationId";
-        query = "SELECT " + 
-                		"	clr.clearingId as transactionId " +         		
-                		"	FROM Clearings clr ";
+//        query = "SELECT " + 
+//                		"	clr.clearingId as transactionId " +         		
+//                		"	FROM Clearings clr ";
         Table resultTable = tableEnv.sqlQuery(query);
 
         //Convert the Dynamic Table to a DataStream
-        DataStream<Transaction> trn = tableEnv.toAppendStream(resultTable, Transaction.class);
+        DataStream<Tuple2<Boolean, Transaction>> trn = tableEnv.toRetractStream(resultTable, Transaction.class);
         //DataStream<Transaction> trn = tableEnv.toAppendStream(resultTable,Transaction.class);
 	    
 		//DataStream<Transaction> trn = step2(authXType, clrXType);
