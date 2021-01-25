@@ -6,8 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Clearing implements Serializable {
-	private static final Logger log = LoggerFactory.getLogger(Clearing.class);
-	private static final long serialVersionUID = 1L;
+//	private static final Logger log = LoggerFactory.getLogger(Clearing.class);
+//	private static final long serialVersionUID = 1L;
 	protected Integer clearingId;
 	protected Integer clearingTypeId;
 	protected Integer authorizationId;
@@ -15,7 +15,7 @@ public class Clearing implements Serializable {
 	protected Integer cardId;
 	protected String clearingDttm;
 	protected String awsDttm;
-	private String processedDttm;
+	protected String processedDttm;
 
 	public Clearing() {
 		super();
@@ -37,7 +37,7 @@ public class Clearing implements Serializable {
 			this.awsDttm = arr[6];
 			this.processedDttm = arr[7];
 		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
-			log.warn("Not all fields was initialized: " + str);
+//			log.warn("Not all fields was initialized: " + str);
 		}
 	}
 	
@@ -53,7 +53,7 @@ public class Clearing implements Serializable {
 			this.awsDttm = AwsKinesisData.currentTimestamp();
 			this.processedDttm = AwsKinesisData.currentTimestamp();
 		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
-			log.warn("Not all fields was initialized: " + str);
+//			log.warn("Not all fields was initialized: " + str);
 		}
 	}
 

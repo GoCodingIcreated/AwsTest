@@ -11,10 +11,10 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 
 @DynamoDBTable(tableName = "CLR_X_TYPE")
 public class ClearingXType extends Clearing implements Serializable {
-	private static final Logger log = LoggerFactory.getLogger(ClearingXType.class);
-	private static final long serialVersionUID = 1L;
+//	private static final Logger log = LoggerFactory.getLogger(ClearingXType.class);
+//	private static final long serialVersionUID = 1L;
 	protected String clearingTypeNm;
-	private String processedDttm;
+//	private String processedDttm;
 
 	public ClearingXType() {
 		super();
@@ -35,7 +35,7 @@ public class ClearingXType extends Clearing implements Serializable {
 			this.awsDttm = arr[9];
 			this.processedDttm = arr[10];
 		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
-			log.warn("Not all fields was initialized: " + str);
+//			log.warn("Not all fields was initialized: " + str);
 		}
 	}
 

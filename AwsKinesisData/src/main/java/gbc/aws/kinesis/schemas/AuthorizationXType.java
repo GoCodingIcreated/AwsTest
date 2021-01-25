@@ -11,10 +11,10 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 
 @DynamoDBTable(tableName = "AUTH_X_TYPE")
 public class AuthorizationXType extends Authorization implements Serializable {
-	private static final long serialVersionUID = 1L;
-	protected static final Logger log = LoggerFactory.getLogger(AuthorizationXType.class);
+//	private static final long serialVersionUID = 1L;
+//	protected static final Logger log = LoggerFactory.getLogger(AuthorizationXType.class);
 	protected String authorizationTypeNm;	
-	private String processedDttm;
+//	private String processedDttm;
 
 	
 	
@@ -43,7 +43,7 @@ public class AuthorizationXType extends Authorization implements Serializable {
 			this.awsDttm = arr[8];
 			this.processedDttm = arr[9];
 		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
-			log.warn("Not all fields was initialized: " + str);
+//			log.warn("Not all fields was initialized: " + str);
 		}
 	}
 

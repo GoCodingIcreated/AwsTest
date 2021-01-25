@@ -6,15 +6,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Authorization implements Serializable {
-	protected static final Logger log = LoggerFactory.getLogger(Authorization.class);
-	protected static final long serialVersionUID = 1L;
+//	protected static final Logger log = LoggerFactory.getLogger(Authorization.class);
+//	protected static final long serialVersionUID = 1L;
 	protected Integer authorizationId;
 	protected Integer authorizationTypeId;
 	protected Double authorizationAmt;
 	protected Integer cardId;
 	protected String authorizationDttm;
 	protected String awsDttm;
-	private String processedDttm;
+	protected String processedDttm;
 	
 
 	public Integer getAuthorizationId() {
@@ -87,7 +87,7 @@ public class Authorization implements Serializable {
 			this.processedDttm = arr[6];
 			
 		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
-			log.warn("Not all fields was initialized: " + str);
+//			log.warn("Not all fields was initialized: " + str);
 		}
 	}
 	
@@ -103,7 +103,7 @@ public class Authorization implements Serializable {
 			this.processedDttm = AwsKinesisData.currentTimestamp();			
 			
 		} catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
-			log.warn("Not all fields was initialized: " + str);
+//			log.warn("Not all fields was initialized: " + str);
 		}
 	}
 
