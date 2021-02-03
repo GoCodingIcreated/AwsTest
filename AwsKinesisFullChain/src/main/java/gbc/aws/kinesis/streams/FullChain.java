@@ -359,7 +359,7 @@ public class FullChain {
 
 		DataStream<ClearingXType> clrXType = step1b(clr);
 		sinkStep(clrXType, outputStreamNameStep1b);
-		/*
+		
 		Table authTable = tableEnv
 			    .fromDataStream(authXType, "authorizationId, authorizationTypeId, authorizationAmt, cardId, authorizationDttm, awsDttm, processedDttm, authorizationTypeNm");
 		Table clrTable = tableEnv
@@ -394,6 +394,7 @@ public class FullChain {
         Table resultTable = tableEnv.sqlQuery(query);
 
         //Convert the Dynamic Table to a DataStream
+        //sinkStep(tableEnv.toRetractStream(resultTable, Transaction.class), outputStreamNameStep6);
         DataStream<Transaction> trn = tableEnv.toRetractStream(resultTable, Transaction.class)
                 .flatMap(new FlatMapFunction<Tuple2<Boolean, Transaction>, Transaction>() {
                     private static final long serialVersionUID = 1L;
@@ -405,15 +406,15 @@ public class FullChain {
                         }
                     }
                 });
-        */
+        
         //DataStream<Transaction> trn = tableEnv.toAppendStream(resultTable,Transaction.class);
 	    
 		//DataStream<Transaction> trn = step2(authXType, clrXType);
 		
         //sinkStep(trn, outputStreamNameStep2);
-		/*
+		
 		DataStream<TransactionXCard> trnXCard = step3(trn);
-		//sinkStep(trnXCard, outputStreamNameStep3);
+		sinkStep(trnXCard, outputStreamNameStep3);
 
 		DataStream<Turn> turn = step4(trnXCard);
 		//sinkStep(turn, outputStreamNameStep4);
@@ -433,7 +434,7 @@ public class FullChain {
 
 		//env.disableOperatorChaining();
 		
-		 */
+		 
 		env.execute("FullChain v.1.0.0.");
 	}
 
